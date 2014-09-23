@@ -55,7 +55,7 @@ element_standard = [x.encode('cp1252') for x in element_standard]
 
 def recode_dosage(table):
     assert 'Dosage' in table.columns
-    table = table[table['Dosage'].notnull()]
+    table = table[table['Dosage'].notnull()].copy()
     table['Dosage'] = table['Dosage'].str.replace(' 000 ', '000 ')
     # il faut le faire 2 fois
     table['Dosage'] = table['Dosage'].str.replace(' 000 ', '000 ')
@@ -81,7 +81,7 @@ def recode_prix(table):
 def recode_ref_dosage(table):
     # TODO: on a des problème de ref dosage.
     assert 'Ref_Dosage' in table.columns
-    table = table[table['Ref_Dosage'].notnull()]
+    table = table[table['Ref_Dosage'].notnull()].copy()
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('un ','')
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('une ','')
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('1ml','1 ml')
@@ -144,7 +144,7 @@ def recode_litre_en_ml(chaine):
 def recode_label_presta(table):
     assert 'Label_presta' in table.columns
     # TODO: identifier d'où viennent les label nuls
-    table = table[table['Label_presta'].notnull()]
+    table = table[table['Label_presta'].notnull()].copy()
     table['Label_presta'] = table['Label_presta'].str.replace(',', '.')
     table['Label_presta'] = table['Label_presta'].str. \
         replace("\(s\)", '')
