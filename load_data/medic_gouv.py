@@ -6,13 +6,14 @@ Created on 26 juin 2014
 import pandas as pd
 import numpy as np
 import re
+import os
 import pdb
 
 pd.set_option('max_colwidth', 100)
 
-path_data = "C:\\Users\\work\\Documents\\ETALAB_data\\"
+from CONFIG import path_gouv
 # Derniere mise à jour BDM
-maj_bdm = 'maj_20140915122241\\'
+maj_bdm = 'maj_20140915122241'
 
 
 dico_variables = dict(
@@ -54,7 +55,7 @@ element_standard = [x.encode('cp1252') for x in element_standard]
 
 def recode_dosage(table):
     assert 'Dosage' in table.columns
-    table = table[table['Dosage'].notnull()]
+    table = table[table['Dosage'].notnull()].copy()
     table['Dosage'] = table['Dosage'].str.replace(' 000 ', '000 ')
     # il faut le faire 2 fois
     table['Dosage'] = table['Dosage'].str.replace(' 000 ', '000 ')
@@ -80,7 +81,7 @@ def recode_prix(table):
 def recode_ref_dosage(table):
     # TODO: on a des problème de ref dosage.
     assert 'Ref_Dosage' in table.columns
-    table = table[table['Ref_Dosage'].notnull()]
+    table = table[table['Ref_Dosage'].notnull()].copy()
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('un ','')
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('une ','')
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('1ml','1 ml')
@@ -143,7 +144,7 @@ def recode_litre_en_ml(chaine):
 def recode_label_presta(table):
     assert 'Label_presta' in table.columns
     # TODO: identifier d'où viennent les label nuls
-    table = table[table['Label_presta'].notnull()]
+    table = table[table['Label_presta'].notnull()].copy()
     table['Label_presta'] = table['Label_presta'].str.replace(',', '.')
     table['Label_presta'] = table['Label_presta'].str. \
         replace("\(s\)", '')
@@ -176,7 +177,6 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
         si var_to_keep est rempli, on ne revoit que la liste des variables
     '''
     # chargement des données
-    path = path_data + "medicament_gouv\\" + maj_bdm
     output = None
     for name, vars in dico_variables.iteritems():
         # teste si on doit ouvrir la table
@@ -185,7 +185,8 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
         if var_to_keep is not None:
             intersect = [var for var in vars if var in var_to_keep]
         if len(intersect) > 0:
-            tab = pd.read_table(path + 'CIS_' + name + '.txt', header=None)
+            path = os.path.join(path_gouv, maj_bdm, 'CIS_' + name + '.txt')
+            tab = pd.read_table(path, header=None)
             if name in ['COMPO_bdpm', 'GENER_bdpm']:
                 tab = tab.iloc[:, :-1]
             tab.columns = vars
