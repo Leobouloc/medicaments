@@ -5,7 +5,9 @@ Created on Fri Aug 08 15:30:38 2014
 @author: tvialette
 """
 import pandas as pd
+import os
 from CONFIG import path_BDM
+
 path_data = "C:\\Users\\work\\Documents\\ETALAB_data\\medicament_gouv\\AFM\\"
 
 info_dispo = ['CIP', 'CIP7', 'CIP_UCD', 'NATURE', 'NOM_COURT', 'INDIC_COND',
@@ -33,7 +35,8 @@ def get_dose(obj):
 
 def bdm_cnamts(info_utiles, unites_par_boite=True):
     ''' charge les info_utiles et crée la variable unites_par_boite '''
-    table_entiere = pd.read_excel(path_BDM + "BDM_CIP.xlsx")
+    path = os.path.join(path_BDM, "BDM_CIP.xlsx")
+    table_entiere = pd.read_excel(path)
     table = table_entiere.loc[:, info_utiles]
     if 'LABO' in info_utiles:
         recode_labo(table)

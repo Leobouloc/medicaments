@@ -5,13 +5,14 @@ Created on 26 juin 2014
 import pandas as pd
 import numpy as np
 import pdb
+import os
 
 from CONFIG import path_gouv
 
 
 pd.set_option('max_colwidth',100)
 # Derniere mise à jour BDM
-maj_bdm = 'maj_20140915122241\\'
+maj_bdm = 'maj_20140915122241'
 
 
 dico_variables = dict(
@@ -30,7 +31,6 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
         si var_to_keep est rempli, on ne revoit que la liste des variables
     '''
     # chargement des données
-    path = path_gouv + maj_bdm
     output = None
     for name, vars in dico_variables.iteritems():
         # teste si on doit ouvrir la table
@@ -39,7 +39,8 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
         if var_to_keep is not None:
             intersect = [var for var in vars if var in var_to_keep]
         if len(intersect) > 0:
-            tab = pd.read_table(path + 'CIS_' + name + '.txt', header=None)
+            path = os.path.join(path_gouv, maj_bdm, 'CIS_' + name + '.txt')
+            tab = pd.read_table(path, header=None)
             if name in ['COMPO_bdpm', 'GENER_bdpm']:
                 tab = tab.iloc[:,:-1]
             tab.columns = vars

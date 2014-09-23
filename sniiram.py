@@ -5,13 +5,15 @@ Created on 26 juin 2014
 # from __future__ import unicode_literals
 
 import pandas as pd
+import os
 from pdb import set_trace
 
 from CONFIG import path_sniiram
 
 
 def load_sniiram():
-    table = pd.read_csv(path_sniiram + 'PHARMA.csv', sep=';')
+    path = os.path.join(path_sniiram, 'PHARMA.csv')
+    table = pd.read_csv(path, sep=';')
     table.columns = ['cip13', 'date', 'nb']
     table['nb'] *= 97
     table['year'] = table['date']//100
