@@ -7,11 +7,11 @@ Created on 26 juin 2014
 import pandas as pd
 from pdb import set_trace
 
-path_data = "C:\\Users\\work\\Documents\\ETALAB_data\\sniiram\\"
+from CONFIG import path_sniiram
 
 
 def load_sniiram():
-    table = pd.read_csv(path_data + 'PHARMA.csv', sep=';')
+    table = pd.read_csv(path_sniiram + 'PHARMA.csv', sep=';')
     table.columns = ['cip13', 'date', 'nb']
     table['nb'] *= 97
     table['year'] = table['date']//100
@@ -21,7 +21,7 @@ def load_sniiram():
     return table
 
 def load_sniiram2():
-    table = pd.read_csv(path_data + 'PHARMA2.csv', sep=';')
+    table = pd.read_csv(path_sniiram + 'PHARMA2.csv', sep=';')
     table.columns = ['cip13', 'date', 'nb','caisse','typ_presta']
     table['nb'] *= 97
     table['year'] = table['date']//100

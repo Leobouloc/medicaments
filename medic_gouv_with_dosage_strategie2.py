@@ -10,7 +10,8 @@ import pdb
 
 pd.set_option('max_colwidth', 100)
 
-path_data = "C:\\Users\\work\\Documents\\ETALAB_data\\"
+
+from CONFIG import path_gouv
 # Derniere mise à jour BDM
 maj_bdm = 'maj_20140915122241\\'
 
@@ -176,7 +177,7 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
         si var_to_keep est rempli, on ne revoit que la liste des variables
     '''
     # chargement des données
-    path = path_data + "medicament_gouv\\" + maj_bdm
+    path = path_gouv + maj_bdm
     output = None
     for name, vars in dico_variables.iteritems():
         # teste si on doit ouvrir la table
