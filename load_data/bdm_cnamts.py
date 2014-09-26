@@ -8,8 +8,6 @@ import pandas as pd
 import os
 from CONFIG import path_BDM
 
-path_data = "C:\\Users\\work\\Documents\\ETALAB_data\\medicament_gouv\\AFM\\"
-
 info_dispo = ['CIP', 'CIP7', 'CIP_UCD', 'NATURE', 'NOM_COURT', 'INDIC_COND',
               'DEBUT_REMB', 'FIN_REMB', 'CODE_LISTE', 'CODE_FORME', 'FORME',
               'CODE_CPLT', 'CPLT_FORME', 'DOSAGE_SA', 'UNITE_SA', 'NB_UNITES',

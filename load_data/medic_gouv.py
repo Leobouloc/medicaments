@@ -28,8 +28,7 @@ dico_variables = dict(
                 'Dosage', 'Ref_Dosage', 'Nature_Composant',
                 'Substance_Fraction'],
     HAS_SMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date', 'Valeur_SMR', 'Libelle_SMR'],
-    HAS_ASMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date', 'Valeur_ASMR',
-                   'Libelle_ASMR'],
+    HAS_ASMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date', 'Valeur_ASMR', 'Libelle_ASMR']
     )
 
 unite_standard = ['ml', 'mg', 'litre']
@@ -190,6 +189,10 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
             if name in ['COMPO_bdpm', 'GENER_bdpm']:
                 tab = tab.iloc[:, :-1]
             tab.columns = vars
+            if name in ['HAS_ASMR_bdpm','HAS_SMR_bdpm']:
+                #On ne selectionne que les médicaments pour lesquels on a un CIS sans lettres (normal)
+                tab=tab.loc[tab['CIS'].apply(lambda x: len(re.findall("[A-Za-z]", x)))==0,:]
+                tab['CIS'] = tab['CIS'].apply(lambda x: float(x))
             tab = tab[['CIS'] + intersect]
             # correction ad-hoc...
             if tab['CIS'].dtype == 'object':
@@ -215,8 +218,8 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
                 output = output.merge(tab, how='outer', on='CIS',
                                       suffixes=('', name[:-4]))
                 if CIP_not_null:
-                    if 'CIP7' in output.columns:
-                        output = output[output['CIP7'].notnull()]
+                    if 'CIP13' in output.columns:
+                        output = output[output['CIP13'].notnull()]
                 print("après la fusion avec " + name + " la base mesure " +
                       str(len(output)))
     return output
