@@ -7,8 +7,7 @@ Created on Wed Sep 24 12:10:10 2014
 
 import pandas as pd
 import os
-from CONFIG import path_BDM_prix
-from CONFIG import path_BDM_prix_harmonise
+from CONFIG import path_BDM
 
 #test.iloc[0].loc[~test.iloc[0,:].isnull()]
 
@@ -16,8 +15,8 @@ from CONFIG import path_BDM_prix_harmonise
 
 
 def load_cnamts_prix_harmonise():
-    
-    table = pd.read_csv(path_BDM_prix_harmonise + '\\BDM_PRIX_harmonise.csv', sep=',')
+    file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
+    table = pd.read_csv(file, sep=',')
     #On rend les colonnes compatibles avec 'period'    
     table.columns = ['CIP']+ ['prix_' + x for x in table.columns[1:]]
     return table
@@ -25,7 +24,8 @@ def load_cnamts_prix_harmonise():
 #Creation de la base harmonisée
 def load_cnamts_prix():
     '''On obtient pour chaque CIP13 une liste de tuples Date // Prix qui correspond aux dates et changements de prix'''
-    table = pd.read_csv(path_BDM_prix + '\\BDM_PRIX.csv', sep=';')
+    file = os.path.join(path_BDM, 'BDM_PRIX.csv')
+    table = pd.read_csv(file, sep=';')
     table['PRIX_E'] = table['PRIX_E'].apply(lambda x: float(x)/100)
     test = table.pivot(index='CIP',columns='DATE_APPLI',values='PRIX_E')
     test.columns = list(pd.Series(test.columns).apply(lambda x: x[6:10] + x[3:5]))
