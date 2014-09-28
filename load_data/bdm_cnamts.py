@@ -30,6 +30,12 @@ def get_dose(obj):
         return float(value)
     except ValueError:
         return None
+    
+
+def recode_labo(table):
+    table['LABO'] = table['LABO'].str.replace('-','')
+    table['LABO'] = table['LABO'].str.replace(' ','')
+
 
 def bdm_cnamts(info_utiles, unites_par_boite=True):
     ''' charge les info_utiles et crée la variable unites_par_boite '''
@@ -43,9 +49,6 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
         table['unites_par_boite'] = table['unites_par_boite'].apply(get_dose)
     return table
 
-def recode_labo(table):
-    table['LABO'] = table['LABO'].str.replace('-','')
-    table['LABO'] = table['LABO'].str.replace(' ','')
 
 if __name__ == '__main__':
     info_utiles_from_cnamts = ['CIP', 'CIP7', 'FORME', 'DOSAGE_SA', 'UNITE_SA','LABO']
