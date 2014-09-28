@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import re
 import os
+import datetime as dt
 import pdb
 
 pd.set_option('max_colwidth', 100)
@@ -222,6 +223,19 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
                         output = output[output['CIP13'].notnull()]
                 print("après la fusion avec " + name + " la base mesure " +
                       str(len(output)))
+    
+    # On met les dates au format datetime
+    for var in var_to_keep:
+        if 'date' in var or 'Date' in var:
+            print('On retire ' + str(sum(output[var].isnull())) + " valeurs parce " +
+                   "qu'il n'y a pas de date")
+            output = output[pd.notnull(output[var])]
+            output[var]  = output[var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
+            for time_idx in ['month', 'year']:
+                name = var + '_' + time_idx
+                output[name] = 0
+                output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
+    
     return output
 
 #if __name__ == '__main__':

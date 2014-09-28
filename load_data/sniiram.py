@@ -11,6 +11,26 @@ from pdb import set_trace
 from CONFIG import path_sniiram
 
 
+def add_date_vente_observee(sniiram):
+    # Pour chaque médicament on détermine l'année de la première vente :
+    # Determiner les dates de premieres ventes
+    periods = sniiram.columns
+    assert all(periods == sorted(periods))
+    premiere_vente = pd.Series(index=sniiram.index)
+    derniere_vente = pd.Series(index=sniiram.index)
+    for month in periods:
+        vente = sniiram[month] > 0
+        cond_prem = vente & premiere_vente.isnull()
+        premiere_vente[cond_prem] = month
+        cond_dern = ~vente & premiere_vente.notnull() & derniere_vente.isnull()
+        derniere_vente[cond_dern] = month - 1
+    
+    # Ajout de la donnée première vente à la base Sniiram
+    sniiram['premiere_vente'] = premiere_vente
+    sniiram['derniere_vente'] = derniere_vente
+    return sniiram
+
+
 def load_sniiram():
     path = os.path.join(path_sniiram, 'PHARMA.csv')
     table = pd.read_csv(path, sep=';')
@@ -20,7 +40,7 @@ def load_sniiram():
     table['cip13'].fillna(1, inplace=True)
     table = table.pivot(index='cip13', columns='date', values='nb')
     # TODO: redresser après 2011
-    return table
+    return add_date_vente_observee(table)
 
 def load_sniiram2():
     table = pd.read_csv(path_sniiram + 'PHARMA2.csv', sep=';')
@@ -47,7 +67,7 @@ def load_sniiram2():
     
     table = table.pivot(index='cip13', columns='date', values='nb')
     #TODO: redresser après 2011
-    return table
+    return add_date_vente_observee(table)
 
 if __name__ == '__main__':
     table = load_sniiram()
