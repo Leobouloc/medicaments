@@ -104,6 +104,9 @@ def recode_ref_dosage(table):
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('pré-remplie' ,'préremplie')
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('sachet dose', 'sachet-dose')
     table['Ref_Dosage'] = table['Ref_Dosage'].apply(recode_litre_en_ml)
+    
+    
+    
     return table
 
 
@@ -139,7 +142,7 @@ def recode_litre_en_ml(chaine):
         return chaine
     else:
         return chaine
-
+        
 
 def recode_label_presta(table):
     assert 'Label_presta' in table.columns
