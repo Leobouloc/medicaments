@@ -55,7 +55,6 @@ def recode_nb_unites(table):
     return table
 
 def recode_nb_unites_split_func(x):
-    print x
     assert(len(x)<=2)
     assert(len(x)>0)
     if len(x)==2:
