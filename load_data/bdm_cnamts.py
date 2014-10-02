@@ -48,6 +48,10 @@ def recode_dosage_sa(table):
     table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
     table = table.loc[~table['DOSAGE_SA'].isnull(), :]
     table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(lambda x: float(x))
+    
+    test_mui = table['UNITE_SA'].str.contains('MUI')
+    table.loc[test_mui,'DOSAGE_SA'] = table.loc[test_mui,'DOSAGE_SA'].replace('MUI','UI')
+    table.loc[test_mui,'DOSAGE_SA'] = table.loc[test_mui,'DOSAGE_SA'].apply(lambda x: x*1000000)
      
     return table            
                
@@ -95,6 +99,8 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
     path = os.path.join(path_BDM, "BDM_CIP.xlsx")
     table_entiere = pd.read_excel(path)
     table = table_entiere.loc[:, info_utiles]
+    if 'UNITE_SA' in info_utiles:
+        table = recode_unite_sa(table) 
     if 'DOSAGE_SA' in info_utiles:
         table = recode_dosage_sa(table) 
     if 'NB_UNITES' in info_utiles:

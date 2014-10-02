@@ -68,6 +68,11 @@ def recode_dosage(table):
     table['Dosage'] = table['Dosage'].str.replace('3 700', '3700')
     table['Dosage'] = table['Dosage'].str.replace(',', '.')
     table['Dosage'] = table['Dosage'].str.replace('\. ', '.')
+    table['Dosage'] = table['Dosage'].str.replace('µg', 'microgrammes')
+    
+    table.loc[table['Dosage'].str.contains(' g'),'Dosage'] = table.loc[table['Dosage'].str.contains(' g'),'Dosage'].apply(lambda x: str(float(x.split()[0]) * 1000) + ' mg')
+    table.loc[table['Dosage'].str.contains(' microgrammes'),'Dosage'] = table.loc[table['Dosage'].str.contains(' microgrammes'),'Dosage'].apply(lambda x: str(float(x.split()[0]) / 1000) + ' mg')
+    
     return table
 
 def recode_prix(table):
