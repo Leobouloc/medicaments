@@ -75,7 +75,7 @@ def recode_prix(table):
     table['Prix'] = table['Prix'].str.replace(',','.')
     #Enlever le premier point pour ceux qui en ont deux
     table.loc[table['Prix'].apply(lambda x: x.count('.'))>1,'Prix'] = table.loc[table['Prix'].apply(lambda x: x.count('.'))>1,'Prix'].str.replace('.','',1)
-    table['Prix'] = table['Prix'].apply(lambda x: float(x))   
+    table['Prix'] = table['Prix'].apply(lambda x: float(x))
     return table
 
 def recode_ref_dosage(table):
@@ -104,9 +104,6 @@ def recode_ref_dosage(table):
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('pré-remplie' ,'préremplie')
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('sachet dose', 'sachet-dose')
     table['Ref_Dosage'] = table['Ref_Dosage'].apply(recode_litre_en_ml)
-    
-    
-    
     return table
 
 
@@ -142,7 +139,7 @@ def recode_litre_en_ml(chaine):
         return chaine
     else:
         return chaine
-        
+
 
 def recode_label_presta(table):
     assert 'Label_presta' in table.columns
@@ -175,7 +172,7 @@ def recode_label_presta(table):
     return table
 
 
-def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
+def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
     ''' renvoie les tables fusionnées issues medicament.gouv.fr
         si var_to_keep est rempli, on ne revoit que la liste des variables
     '''
@@ -226,7 +223,7 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
                         output = output[output['CIP13'].notnull()]
                 print("après la fusion avec " + name + " la base mesure " +
                       str(len(output)))
-    
+
     # On met les dates au format datetime
     for var in var_to_keep:
         if 'date' in var or 'Date' in var:
@@ -238,7 +235,7 @@ def load_medic_gouv(maj_bdm, var_to_keep=None, CIP_not_null=False):
                 name = var + '_' + time_idx
                 output[name] = 0
                 output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
-    
+
     return output
 
 #if __name__ == '__main__':
@@ -267,20 +264,20 @@ def extract_quantity(label, reference):
     if " et " in label:
         label = label.split(' et ')[-1]
     if " - " in label:
-        label = label.split(" - ")[-1]  
+        label = label.split(" - ")[-1]
     floats = re.findall(r"[-+]?\d*\.\d+|\d+", label)
     floats = [float(x) for x in floats]
     if len(floats) == 0:
-        return 1   
+        return 1
     return reduce(lambda x, y: x*y, floats)
 #    except:
 #        print label, reference
 #        print row
 #        pdb.set_trace()
 #        pass
-    
+
 def table_update(table):
-    
+
     nb_ref_in_label = np.zeros(len(table))
     incoherence_identifiee = []
     reconstitu = []
@@ -288,11 +285,11 @@ def table_update(table):
     for k, row in table[['Ref_Dosage', 'Dosage', 'Label_presta']].iterrows():
         # travail de base sur la référence
         i += 1
-        
+
         #if i % 100 == 0:
             #print(" on en a fait " + str(i) )
         reference = row['Ref_Dosage']
-            
+
         if not pd.isnull(reference):
             if reference[:2] == '1 ':
                 reference = reference[1:]  # on laisse un espace parce que
@@ -303,16 +300,19 @@ def table_update(table):
                 reference_dose = reduce(lambda x, y: x*y, ref_floats)
             else:
                 reference_dose = 1
+            if reference_dose == 0:
+                #un seul cas
+                reference_dose = 1
             # travail de base sur le label
             label = row['Label_presta']
             if label.split()[0] in element_standard:
                 label = '1 ' + label
-        
+
             if reference in label:
                 # TODO: douteux quand la référence apparait plusieurs fois
                 label_dose = extract_quantity(label, reference)
                 nb_ref_in_label[i] = label_dose/reference_dose
-        
+
             if nb_ref_in_label[i] == 0:
                 for unite in ['ml', 'l', 'mg', 'g', 'dose', 'litre']:
                     if len(reference) >= len(unite) + 1:
@@ -320,8 +320,8 @@ def table_update(table):
                            reference[-(len(unite) + 1):] == ' ' + unite or \
                            reference[:len(unite)] == unite :
                             if ' ' + unite in label:
-                                nb_ref_in_label[i] = extract_quantity(label, ' ' + unite)
-        
+                                nb_ref_in_label[i] = extract_quantity(label, ' ' + unite)/reference_dose
+
             if nb_ref_in_label[i] == 0:
                 reference = row['Ref_Dosage']
                 contenant = [var for var in element_standard
@@ -331,12 +331,12 @@ def table_update(table):
                     if var in label:
                         label_dose = extract_quantity(label, var)
                         nb_ref_in_label[i] = label_dose
-        
+
             if nb_ref_in_label[i] == 0:
                 reference = row['Ref_Dosage']
                 if reference in ['lyophilisat', '1 flacon', 'dose mesurée']:
                     nb_ref_in_label[i] = extract_quantity(label, 'flacon')
-        
+
             if nb_ref_in_label[i] == 0:
                 reference = row['Ref_Dosage']
                 if ((any(masse in reference for masse in ['g', 'mg']) and
@@ -344,7 +344,7 @@ def table_update(table):
                     (any(masse in label for masse in ['g', 'mg']) and
                     any(vol in reference for vol in ['l', 'ml']))):
                     incoherence_identifiee += [i]
-        
+
                 elif reference == 'comprimé' and 'gélule' in label:
                     nb_ref_in_label[i] = extract_quantity(label, 'gélule')
                 elif 'qsp' in row['Dosage']:
