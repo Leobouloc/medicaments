@@ -31,18 +31,28 @@ def get_dose(obj):
         return float(value)
     except ValueError:
         return None
+
+def recode_dosage_isfloat(value):
+  try:
+    float(value)
+    return True
+  except ValueError:
+    return False
         
 def recode_dosage_sa(table):
     print('dosage ' + str(len(table)))
     #Supprimer le texte en particulier
     #table = table.loc[table['DOSAGE_SA'].apply(lambda x: x!='NON RENSEIGNE' and x!='NON RENSIGNE' and x!='NON RE' and x!='NR')] 
-    #Supprimer toutes les listes avec du texte    
-    table = table.loc[table['DOSAGE_SA'].apply(lambda x: str(x).isdigit())]
+    #Supprimer toutes les listes avec du texte 
+    table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace(',','.')    
+    table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
     table = table.loc[~table['DOSAGE_SA'].isnull(), :]
-    table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace(',','.')
     table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(lambda x: float(x))
+     
     return table            
-                
+               
+               
+               
 def recode_nb_unites(table):
     #print('nb_unites ' + str(len(table)))
     ''' recode les objets avec des slashs : 2/150 ---> 2''' 
@@ -86,7 +96,7 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
     table_entiere = pd.read_excel(path)
     table = table_entiere.loc[:, info_utiles]
     if 'DOSAGE_SA' in info_utiles:
-        table = recode_dosage_sa(table)    
+        table = recode_dosage_sa(table) 
     if 'NB_UNITES' in info_utiles:
         table = recode_nb_unites(table)
     if 'LABO' in info_utiles:

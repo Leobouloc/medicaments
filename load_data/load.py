@@ -14,7 +14,6 @@ def load_all(from_gouv, maj_gouv, from_cnamts):
     # Chargement des données médicaments.gouv et cnamts
     gouv = mg.load_medic_gouv(maj_gouv, var_to_keep=from_gouv, CIP_not_null=True)
     cnam = cnamts.bdm_cnamts(from_cnamts)
-    
     # Chargement de la base Sniiram
     sniiram = load_sniiram()
     #Chargement des prix dynamiques
