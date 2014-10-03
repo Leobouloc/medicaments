@@ -53,6 +53,12 @@ element_standard = [u'comprimé', u'gélule', u'capsule', u'flacon', u'ampoule',
 element_standard = [x.encode('cp1252') for x in element_standard]
 
 
+def recode_dosage_lambda1(x):
+    try:
+        return str(float(x.split()[0]) / 1000) + ' mg'
+    except:
+        return x
+        
 def recode_dosage(table):
     assert 'Dosage' in table.columns
     table = table[table['Dosage'].notnull()].copy()
@@ -69,8 +75,8 @@ def recode_dosage(table):
     table['Dosage'] = table['Dosage'].str.replace(',', '.')
     table['Dosage'] = table['Dosage'].str.replace('\. ', '.')
     table['Dosage'] = table['Dosage'].str.replace('µg', 'microgrammes')
-    
-    table.loc[table['Dosage'].str.contains(' g'),'Dosage'] = table.loc[table['Dosage'].str.contains(' g'),'Dosage'].apply(lambda x: str(float(x.split()[0]) * 1000) + ' mg')
+
+    table.loc[table['Dosage'].str.contains(' g'),'Dosage'] = table.loc[table['Dosage'].str.contains(' g'),'Dosage'].apply(lambda x: recode_dosage_lambda1(x))
     table.loc[table['Dosage'].str.contains(' microgrammes'),'Dosage'] = table.loc[table['Dosage'].str.contains(' microgrammes'),'Dosage'].apply(lambda x: str(float(x.split()[0]) / 1000) + ' mg')
     
     return table

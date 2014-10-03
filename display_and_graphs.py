@@ -14,7 +14,7 @@ def print_role(data, Type=False):
     if Type:
         assert 'Type' in data.columns
         role = data['Type']
-        assert any(role == 0)
+        assert any(role == 0) # Il y a nécéssairement un princeps
         print('\n *** princeps ***' )
         print (data[role == 0])
         if any(role == 1):
@@ -26,23 +26,23 @@ def print_role(data, Type=False):
         print data
     
 
-def info_display(name=None ,CIP13=None, Id_Groupe=None, CODE_ATC= None, variables=None, return_tab=False):
+def info_display(data, name=None ,CIP13=None, Id_Groupe=None, CODE_ATC= None, variables=None, return_tab=False):
     '''Display des informations sur les medicaments,
         choisir les données à montrer dans "variables",
         return_tab=True si on veut renvoyer un objet, =False pour le print'''
-    base_brute.sort(['Id_Groupe', 'premiere_vente'])
+    data.sort(['Id_Groupe', 'premiere_vente'])
     if variables==None:
         vars_display=['Id_Groupe','Type','LABO','Date_declar_commerc','prix_par_dosage_201401']
     else :
         vars_display=variables
     if name != None:
-        disp =base_brute.loc[base_brute['Nom'].str.contains(name, case=False, na=False),vars_display]
+        disp = data.loc[base_brute['Nom'].str.contains(name, case=False, na=False),vars_display]
     if CIP13 != None:
-        disp = base_brute.loc[base_brute['CIP13']==CIP13,vars_display]
+        disp = data.loc[base_brute['CIP13']==CIP13,vars_display]
     if CODE_ATC != None:
-        disp = base_brute.loc[base_brute['CODE_ATC']==CODE_ATC,vars_display]
+        disp = data.loc[base_brute['CODE_ATC']==CODE_ATC,vars_display]
     if Id_Groupe != None:
-        disp = base_brute.loc[base_brute['Id_Groupe']==Id_Groupe,vars_display]
+        disp = data.loc[base_brute['Id_Groupe']==Id_Groupe,vars_display]
 
     if return_tab:
         return disp
@@ -59,7 +59,7 @@ def info_display(name=None ,CIP13=None, Id_Groupe=None, CODE_ATC= None, variable
 def moving_average(table, size):
     assert size % 2 == 0
     mid_size = size/2
-    output = DataFrame(columns=table.columns, index=table.index)
+    output = pd.DataFrame(columns=table.columns, index=table.index)
     for date in range(mid_size, len(table.columns) - mid_size):
         output[output.columns[date]] = table.iloc[:,(date-mid_size+1):(date+mid_size+1)].mean(axis=1) #les dépenses du mois sont prise en fin de mois
 #     for group in output.index:

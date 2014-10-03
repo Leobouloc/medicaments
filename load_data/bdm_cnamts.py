@@ -49,10 +49,14 @@ def recode_dosage_sa(table):
     table = table.loc[~table['DOSAGE_SA'].isnull(), :]
     table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(lambda x: float(x))
     
-    test_mui = table['UNITE_SA'].str.contains('MUI')
-    table.loc[test_mui,'DOSAGE_SA'] = table.loc[test_mui,'DOSAGE_SA'].replace('MUI','UI')
+    test_mui = table['UNITE_SA'].str.contains('MUI', na=False)
+    table.loc[test_mui,'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('MUI', 'UI')
     table.loc[test_mui,'DOSAGE_SA'] = table.loc[test_mui,'DOSAGE_SA'].apply(lambda x: x*1000000)
-     
+    
+    test_grammes = table['UNITE_SA'] == 'G'
+    table.loc[test_grammes, 'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('G', 'MG')
+    table.loc[test_grammes,'DOSAGE_SA'] = table.loc[test_grammes,'DOSAGE_SA'].apply(lambda x: x*1000)        
+    
     return table            
                
                
@@ -99,8 +103,6 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
     path = os.path.join(path_BDM, "BDM_CIP.xlsx")
     table_entiere = pd.read_excel(path)
     table = table_entiere.loc[:, info_utiles]
-    if 'UNITE_SA' in info_utiles:
-        table = recode_unite_sa(table) 
     if 'DOSAGE_SA' in info_utiles:
         table = recode_dosage_sa(table) 
     if 'NB_UNITES' in info_utiles:
@@ -114,5 +116,5 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
 
 
 if __name__ == '__main__':
-    info_utiles_from_cnamts = ['CIP', 'CIP7', 'FORME', 'NB_UNITES', 'DOSAGE_SA', 'UNITE_SA','LABO']
+    info_utiles_from_cnamts = ['CIP', 'CIP7', 'CODE_ATC', 'NB_UNITES', 'DOSAGE_SA', 'UNITE_SA','LABO']
     test = bdm_cnamts(info_utiles_from_cnamts)
