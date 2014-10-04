@@ -183,88 +183,6 @@ def recode_label_presta(table):
     return table
 
 
-def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
-    ''' renvoie les tables fusionnées issues medicament.gouv.fr
-        si var_to_keep est rempli, on ne revoit que la liste des variables
-    '''
-    # chargement des données
-    output = None
-    for name, vars in dico_variables.iteritems():
-        # teste si on doit ouvrir la table
-        if var_to_keep is None:
-            intersect = vars
-        if var_to_keep is not None:
-            intersect = [var for var in vars if var in var_to_keep]
-        if len(intersect) > 0:
-            path = os.path.join(path_gouv, maj_bdm, 'CIS_' + name + '.txt')
-            tab = pd.read_table(path, header=None)
-            if name in ['COMPO_bdpm', 'GENER_bdpm']:
-                tab = tab.iloc[:, :-1]
-            tab.columns = vars
-            if name in ['HAS_ASMR_bdpm','HAS_SMR_bdpm']:
-                #On ne selectionne que les médicaments pour lesquels on a un CIS sans lettres (normal)
-                tab=tab.loc[tab['CIS'].apply(lambda x: len(re.findall("[A-Za-z]", x)))==0,:]
-                tab['CIS'] = tab['CIS'].apply(lambda x: float(x))
-            tab = tab[['CIS'] + intersect]
-            # correction ad-hoc...
-            if tab['CIS'].dtype == 'object':
-                problemes = tab['CIS'].str.contains('REP', na=False)
-                problemes = problemes | tab['CIS'].isin(['I6049513', 'inc     '])
-                tab = tab.loc[~problemes, :]
-                tab['CIS'].astype(int)
-
-            if 'Ref_Dosage' in intersect:
-                tab = recode_ref_dosage(tab)
-            if 'Dosage' in intersect:
-                tab = recode_dosage(tab)
-            if 'Label_presta' in intersect:
-                tab = recode_label_presta(tab)
-            if 'Prix' in intersect:
-                tab = recode_prix(tab)
-            if output is None:
-                output = tab
-                print("la première table est " + name + " , son nombre de " +
-                      "lignes est " + str(len(output)))
-            else:
-
-                output = output.merge(tab, how='outer', on='CIS',
-                                      suffixes=('', name[:-4]))
-                if CIP_not_null:
-                    if 'CIP13' in output.columns:
-                        output = output[output['CIP13'].notnull()]
-                print("après la fusion avec " + name + " la base mesure " +
-                      str(len(output)))
-
-    # On met les dates au format datetime
-    for var in var_to_keep:
-        if 'date' in var or 'Date' in var:
-            print('On retire ' + str(sum(output[var].isnull())) + " valeurs parce " +
-                   "qu'il n'y a pas de date")
-            output = output[pd.notnull(output[var])]
-            output[var]  = output[var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
-            for time_idx in ['month', 'year']:
-                name = var + '_' + time_idx
-                output[name] = 0
-                output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
-
-    return output
-
-#if __name__ == '__main__':
-##table = load_medic_gouv(maj_bdm, ['Etat','Date_AMM','CIP7','Label_presta','Date_declar_commerc','Taux_rembours','Prix','Id_Groupe','Type',
-##                                  'indic_droit_rembours', 'Statu_admin_presta','Element_Pharma','Code_Substance','Nom_Substance','',
-##                                  'Ref_Dosage','Nature_Composant','Substance_Fraction'])
-##     test = load_medic_gouv(maj_bdm)
-#    table = load_medic_gouv(maj_bdm, ['CIP7', 'Label_presta',
-#                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
-#                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
-#
-#    table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
-#
-#    for var in ['Ref_Dosage', 'Dosage', 'Label_presta']:
-#        print table[var].isnull().sum()
-#        table = table[table[var].notnull()]
-
-
 def extract_quantity(label, reference):
 
     # TODO: douteux quand la référence apparait plusieurs fois
@@ -402,3 +320,83 @@ def table_update(table):
 #            print(row)
 #            pdb.set_trace()
 
+def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
+    ''' renvoie les tables fusionnées issues medicament.gouv.fr
+        si var_to_keep est rempli, on ne revoit que la liste des variables
+    '''
+    # chargement des données
+    output = None
+    for name, vars in dico_variables.iteritems():
+        # teste si on doit ouvrir la table
+        if var_to_keep is None:
+            intersect = vars
+        if var_to_keep is not None:
+            intersect = [var for var in vars if var in var_to_keep]
+        if len(intersect) > 0:
+            path = os.path.join(path_gouv, maj_bdm, 'CIS_' + name + '.txt')
+            tab = pd.read_table(path, header=None)
+            if name in ['COMPO_bdpm', 'GENER_bdpm']:
+                tab = tab.iloc[:, :-1]
+            tab.columns = vars
+            if name in ['HAS_ASMR_bdpm','HAS_SMR_bdpm']:
+                #On ne selectionne que les médicaments pour lesquels on a un CIS sans lettres (normal)
+                tab=tab.loc[tab['CIS'].apply(lambda x: len(re.findall("[A-Za-z]", x)))==0,:]
+                tab['CIS'] = tab['CIS'].apply(lambda x: float(x))
+            tab = tab[['CIS'] + intersect]
+            # correction ad-hoc...
+            if tab['CIS'].dtype == 'object':
+                problemes = tab['CIS'].str.contains('REP', na=False)
+                problemes = problemes | tab['CIS'].isin(['I6049513', 'inc     '])
+                tab = tab.loc[~problemes, :]
+                tab['CIS'].astype(int)
+
+            if 'Ref_Dosage' in intersect:
+                tab = recode_ref_dosage(tab)
+            if 'Dosage' in intersect:
+                tab = recode_dosage(tab)
+            if 'Label_presta' in intersect:
+                tab = recode_label_presta(tab)
+            if 'Prix' in intersect:
+                tab = recode_prix(tab)
+            if output is None:
+                output = tab
+                print("la première table est " + name + " , son nombre de " +
+                      "lignes est " + str(len(output)))
+            else:
+
+                output = output.merge(tab, how='outer', on='CIS',
+                                      suffixes=('', name[:-4]))
+                if CIP_not_null:
+                    if 'CIP13' in output.columns:
+                        output = output[output['CIP13'].notnull()]
+                print("après la fusion avec " + name + " la base mesure " +
+                      str(len(output)))
+
+    # On met les dates au format datetime
+    for var in var_to_keep:
+        if 'date' in var or 'Date' in var:
+            print('On retire ' + str(sum(output[var].isnull())) + " valeurs parce " +
+                   "qu'il n'y a pas de date")
+            output = output[pd.notnull(output[var])]
+            output[var]  = output[var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
+            for time_idx in ['month', 'year']:
+                name = var + '_' + time_idx
+                output[name] = 0
+                output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
+
+    return output
+
+#if __name__ == '__main__':
+##table = load_medic_gouv(maj_bdm, ['Etat','Date_AMM','CIP7','Label_presta','Date_declar_commerc','Taux_rembours','Prix','Id_Groupe','Type',
+##                                  'indic_droit_rembours', 'Statu_admin_presta','Element_Pharma','Code_Substance','Nom_Substance','',
+##                                  'Ref_Dosage','Nature_Composant','Substance_Fraction'])
+##     test = load_medic_gouv(maj_bdm)
+#    table = load_medic_gouv(maj_bdm, ['CIP7', 'Label_presta',
+#                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
+#                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
+#
+#    table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
+#
+#    for var in ['Ref_Dosage', 'Dosage', 'Label_presta']:
+#        print table[var].isnull().sum()
+#        table = table[table[var].notnull()]
