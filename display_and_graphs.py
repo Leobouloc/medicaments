@@ -139,12 +139,14 @@ def graph_ma_classe(CODE_ATC, proportion=False):  # code_substance):
     output.plot()
     plt.show()
 
-def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe'):
+def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', average = False):
     '''Crée le plot du prix par substance pour tous les médicaments d'une même classe ATC'''
     #Si on rentre un groupe, on détermine le code ATC associé
     if Id_Groupe != None:
         CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'CODE_ATC'].iloc[0]    
-    
+        if not isinstance(CODE_ATC, unicode):
+            print 'CODE_ATC inconnu'
+            
     plt.close()
     assert sorted(period)==period
     assert sorted(period_prix)==period_prix
@@ -156,6 +158,8 @@ def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe')
         output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dosage]
         output.index = base_brute[select].loc[base_brute.loc[select, color_by] == value, 'CIP13']
         #output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
+        if average == True:
+            output = output.mean()
         plt.plot(output.transpose(), color = colors[i])
         i=i+1
     plt.show()
@@ -167,29 +171,34 @@ def graph_cout_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     #Si on rentre un groupe, on détermine le code ATC associé
     if Id_Groupe != None:
         CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'CODE_ATC'].iloc[0]
-
+        if np.isnan(CODE_ATC):
+            print 'CODE_ATC inconnu'
+    
     plt.close()
     assert sorted(period)==period
     assert sorted(period_prix)==period_prix
-    i = 0
+    i = 0 # Sert pour le choix de la couleur
     
     select = base_brute.loc[:,'CODE_ATC'] == CODE_ATC
+    tab1 = moving_average(base_brute.loc[select, period])
+    tab2 = base_brute.loc[select, period_prix_par_dosage]
+    tab2.columns = period
+    output = tab1 * tab2 
+    
+    sum_output = output.sum(axis=0, skipna=True)
+    
     #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
     for value in set(base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by]):
 #        tab1 = moving_average(base_brute.loc[base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by] == value, period])
 #        tab2 = base_brute.loc[base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by] == value, period_prix_par_dosage]
-        tab1 = moving_average(base_brute[select].loc[base_brute.loc[select, color_by] == value, period])
-        tab2 = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dosage]
-        
-        tab2.columns = period
-        output = tab1 * tab2
-        if make_sum == True:        
-            output = output.sum(skipna = True)
-            output.index = range(len(output.index))
+        output_group = output.loc[base_brute.loc[select, color_by] == value]        
+            
+        if proportion == True:
+            output_group = output_group.div(sum_output)
+        if make_sum == True:
+            output_group = output_group.sum(skipna = True)
+            output_group.index = range(len(output_group.index))
         else:
-            output.columns = range(len(output.columns))
-#        if proportion == True: ##FAUX : ne tient pas compte de la classe
-#            output = output.div(output.sum(axis=0), axis=1)
-        plt.plot(output.transpose(), color = colors[i])
-        i = i + 1
+            output_group.columns = range(len(output_group.columns))
+        plt.plot(output_group.transpose(), color = colors[i])
     plt.show()
