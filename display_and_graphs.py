@@ -171,7 +171,7 @@ def graph_cout_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     #Si on rentre un groupe, on détermine le code ATC associé
     if Id_Groupe != None:
         CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'CODE_ATC'].iloc[0]
-        if np.isnan(CODE_ATC):
+        if not isinstance(CODE_ATC, unicode):
             print 'CODE_ATC inconnu'
     
     plt.close()
