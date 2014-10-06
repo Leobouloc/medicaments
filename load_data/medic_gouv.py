@@ -384,7 +384,8 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
                 output[name] = 0
                 output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
 
-    output['nb_ref_in_label_medic_gouv'] = table_update(output)
+    if 'nb_Ref_Dosage' in var_to_keep:
+      output['nb_Ref_Dosage'] = table_update(output)
     
     return output
 
