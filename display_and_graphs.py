@@ -5,6 +5,10 @@ Created on Thu Oct 02 10:12:13 2014
 @author: work
 """
 
+colors = [hex for name, hex in matplotlib.colors.cnames.iteritems()]
+#colors =['#002b36', '#073642', '#586e75', '#657b83', '#839496', '#93a1a1', '#eee8d5',
+        # '#fdf6e3','#b58900','#cb4b16','#dc322f','#d33682','#6c71c4','#268bd2','#2aa198','#859900']
+
 def select(table):
     ''' Permet d'appliquer les conditions (ci dessus) à la table '''
     table2 = table.loc[cond.index[cond]]
@@ -26,23 +30,25 @@ def print_role(data, Type=False):
         print data
     
 
-def info_display(data, name=None ,CIP13=None, Id_Groupe=None, CODE_ATC= None, variables=None, return_tab=False):
+def info_display(data, cip_unique = True, name = None ,CIP13 = None, Id_Groupe = None, CODE_ATC = None, variables = None, return_tab = False):
     '''Display des informations sur les medicaments,
         choisir les données à montrer dans "variables",
         return_tab=True si on veut renvoyer un objet, =False pour le print'''
     data.sort(['Id_Groupe', 'premiere_vente'])
+    if cip_unique == True:
+        data = data[data['cip_unique']]
     if variables==None:
         vars_display=['Id_Groupe','Type','LABO','Date_declar_commerc','prix_par_dosage_201401']
     else :
         vars_display=variables
     if name != None:
-        disp = data.loc[base_brute['Nom'].str.contains(name, case=False, na=False),vars_display]
+        disp = data.loc[data['Nom'].str.contains(name, case=False, na=False),vars_display]
     if CIP13 != None:
-        disp = data.loc[base_brute['CIP13']==CIP13,vars_display]
+        disp = data.loc[data['CIP13']==CIP13,vars_display]
     if CODE_ATC != None:
-        disp = data.loc[base_brute['CODE_ATC']==CODE_ATC,vars_display]
+        disp = data.loc[data['CODE_ATC']==CODE_ATC,vars_display]
     if Id_Groupe != None:
-        disp = data.loc[base_brute['Id_Groupe']==Id_Groupe,vars_display]
+        disp = data.loc[data['Id_Groupe']==Id_Groupe,vars_display]
 
     if return_tab:
         return disp
@@ -56,7 +62,7 @@ def info_display(data, name=None ,CIP13=None, Id_Groupe=None, CODE_ATC= None, va
             print_role(disp, Type)
     #return disp
 
-def moving_average(table, size):
+def moving_average(table, size = 12):
     assert size % 2 == 0
     mid_size = size/2
     output = pd.DataFrame(columns=table.columns, index=table.index)
@@ -133,16 +139,57 @@ def graph_ma_classe(CODE_ATC, proportion=False):  # code_substance):
     output.plot()
     plt.show()
 
-def graph_prix_classe(CODE_ATC):
+def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe'):
     '''Crée le plot du prix par substance pour tous les médicaments d'une même classe ATC'''
+    #Si on rentre un groupe, on détermine le code ATC associé
+    if Id_Groupe != None:
+        CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'CODE_ATC'].iloc[0]    
+    
     plt.close()
     assert sorted(period)==period
     assert sorted(period_prix)==period_prix
-    
+        
+    i=0
+    select = base_brute.loc[:,'CODE_ATC'] == CODE_ATC
     #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
+    for value in set(base_brute.loc[select, color_by]):
+        output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dosage]
+        output.index = base_brute[select].loc[base_brute.loc[select, color_by] == value, 'CIP13']
+        #output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
+        plt.plot(output.transpose(), color = colors[i])
+        i=i+1
+    plt.show()
     
-    output = base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, period_prix_par_dosage]
-    output.index = base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, 'CIP13']
-    #output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
-    output.transpose().plot(marker='o')
+def graph_cout_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', make_sum = False, proportion = False):
+    '''Le cout est le produit du dosage vendu et du prix par dosage'''
+    '''color_by choisit le champ déterminant pour la couleur'''
+    '''make_sum détermine si l'on somme suivant le critère défini par color_by'''
+    #Si on rentre un groupe, on détermine le code ATC associé
+    if Id_Groupe != None:
+        CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'CODE_ATC'].iloc[0]
+
+    plt.close()
+    assert sorted(period)==period
+    assert sorted(period_prix)==period_prix
+    i = 0
+    
+    select = base_brute.loc[:,'CODE_ATC'] == CODE_ATC
+    #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
+    for value in set(base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by]):
+#        tab1 = moving_average(base_brute.loc[base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by] == value, period])
+#        tab2 = base_brute.loc[base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by] == value, period_prix_par_dosage]
+        tab1 = moving_average(base_brute[select].loc[base_brute.loc[select, color_by] == value, period])
+        tab2 = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dosage]
+        
+        tab2.columns = period
+        output = tab1 * tab2
+        if make_sum == True:        
+            output = output.sum(skipna = True)
+            output.index = range(len(output.index))
+        else:
+            output.columns = range(len(output.columns))
+#        if proportion == True: ##FAUX : ne tient pas compte de la classe
+#            output = output.div(output.sum(axis=0), axis=1)
+        plt.plot(output.transpose(), color = colors[i])
+        i = i + 1
     plt.show()
