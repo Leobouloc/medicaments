@@ -224,9 +224,10 @@ def table_update(table):
                 reference = reference[1:]  # on laisse un espace parce que
                 # si ça commence par 1 g, comme ça, ça passe le test avec unit
             ref_floats = re.findall(r"[-+]?\d*\.\d+|\d+", reference)
+            #unite = re.search("^" + ref_floats + ": (\w+)", reference)
             if len(ref_floats) > 0:
                 ref_floats = [float(x) for x in ref_floats]
-                reference_dose = reduce(lambda x, y: x*y, ref_floats)
+                reference_dose = reduce(lambda x, y: x*y, ref_floats) # On multiplie tous les éléments de ref_float ensemble
             else:
                 reference_dose = 1
             if reference_dose == 0:
