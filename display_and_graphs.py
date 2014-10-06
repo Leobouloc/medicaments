@@ -189,8 +189,7 @@ def graph_cout_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     
     #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
     for value in set(base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by]):
-#        tab1 = moving_average(base_brute.loc[base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by] == value, period])
-#        tab2 = base_brute.loc[base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by] == value, period_prix_par_dosage]
+        
         output_group = output.loc[base_brute.loc[select, color_by] == value]        
             
         if proportion == True:
@@ -201,4 +200,6 @@ def graph_cout_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         else:
             output_group.columns = range(len(output_group.columns))
         plt.plot(output_group.transpose(), color = colors[i])
+        print i
+        i = i + 1
     plt.show()
