@@ -92,7 +92,7 @@ def moving_average(table, size = 12):
 def evolution(table):
     '''Calcul des differences de consommation'''
     evolution = pd.DataFrame(index = table.index, columns = period[1:])
-    table[table==0] = None
+    table[table == 0] = None
     last_month = table[period[0]]
     for month in period[1:]:
         evolution[month] = (table[month] - last_month)#/last_month
@@ -150,7 +150,7 @@ def graph_ma_classe(CODE_ATC, proportion=False):  # code_substance):
             except:
                 print 'exception'
     #print output
-    if proportion == True:
+    if proportion:
         output = output.div(output.sum(axis=1), axis=0) #pour avoir la proportion de chaque groupe
     output.plot()
     plt.show()
@@ -175,7 +175,7 @@ def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dosage]
         output.index = base_brute[select].loc[base_brute.loc[select, color_by] == value, 'CIP13']
         #output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
-        if average == True:
+        if average:
             output = output.mean()
         plt.plot(output.transpose(), color = colors[i])
         i=i+1
@@ -214,7 +214,7 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     elif display == 'dosage':
         output = base_brute.loc[select, period_dosage_rembourse]
     
-    if variations == True:
+    if variations:
         output = evolution(output)
     output = moving_average(output, average_over)
     
@@ -229,14 +229,14 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         
         output_group = output.loc[base_brute.loc[select, color_by] == value]        
             
-        if proportion == True:
+        if proportion:
             output_group = output_group.div(sum_output)
-        if make_sum == True:
+        if make_sum:
             output_group = output_group.sum(skipna = True)
         else:
             output_group.columns = range(len(output_group.columns))
         output_group.index = range(len(output_group.index))
-        if make_sum == True:
+        if make_sum:
             plt.plot(output_group.transpose(), color = colors[i], label = str(value))
         else:
             for j in output_group.index:
