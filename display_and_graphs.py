@@ -11,6 +11,19 @@ colors = [hex for name, hex in matplotlib.colors.cnames.iteritems()]
 #colors =['#002b36', '#073642', '#586e75', '#657b83', '#839496', '#93a1a1', '#eee8d5',
         # '#fdf6e3','#b58900','#cb4b16','#dc322f','#d33682','#6c71c4','#268bd2','#2aa198','#859900']
 
+
+#Montre le nombre de groupes par code substance substance
+def class_count(niveau = 4):
+    if niveau == 4:
+        string = 'CODE_ATC_4'
+    elif niveau == 6:
+        string = 'CODE_ATC'
+    for code in set(base_brute[string]):
+        b=set(base_brute.loc[base_brute[string]==code,'Id_Groupe'])
+        print str(code) + ' --->> ' + str(len(b))
+        print b
+
+
 def select(table):
     ''' Permet d'appliquer les conditions (ci dessus) à la table '''
     table2 = table.loc[cond.index[cond]]
@@ -36,13 +49,24 @@ def info_display(data, input_val = None , name = None ,CIP13 = None, Id_Groupe =
     '''Display des informations sur les medicaments,
         choisir les données à montrer dans "variables",
         return_tab=True si on veut renvoyer un objet, =False pour le print'''
+    
+    # On choisit par défaut l'ATC de niveau 4 pour le display
+    string_atc = 'CODE_ATC_4'
+    
+    # Si on entre un ATC complet, on display l'ATC complet
+    if CODE_ATC != None and len(CODE_ATC) == 7:
+        string_atc = 'CODE_ATC'     
+        
     #Détecte si l'input correspond au groupe, à la classe ou au CIP13
     if input_val != None:  
         if isinstance(input_val, str):
             if len(input_val) == 13:
                 CIP13 = input_val
+            elif len(input_val) == 5:
+                CODE_ATC = input_val
             elif len(input_val) == 7:
                 CODE_ATC = input_val
+                string_atc = 'CODE_ATC'
             else:
                 print 'input_val is unidentified string'
         elif isinstance(input_val, int):
@@ -59,7 +83,7 @@ def info_display(data, input_val = None , name = None ,CIP13 = None, Id_Groupe =
     if CIP13 != None:
         disp = data.loc[data['CIP13']==CIP13,vars_display]
     if CODE_ATC != None:
-        disp = data.loc[data['CODE_ATC']==CODE_ATC,vars_display]
+        disp = data.loc[data[string_atc]==CODE_ATC, vars_display]
     if Id_Groupe != None:
         disp = data.loc[data['Id_Groupe']==Id_Groupe,vars_display]
 
@@ -128,48 +152,56 @@ def graph_ma(group):
     plt.show()
 
 
-def graph_ma_classe(CODE_ATC, proportion=False):  # code_substance):
-    ''' Créer le plot de comparaison de consommation totale des groupes par classe'''
-    plt.close()    
-    output = None
-    for group in list(set(base_brute.loc[base_brute['CODE_ATC']==CODE_ATC,'Id_Groupe'])):
-        print group
-        col0 = moving_average_princeps[moving_average_princeps.index == group]
-        col1 = moving_average_generic[moving_average_generic.index == group]
-        col2 = col0.add(col1,fill_value=0)
-        #col2 = col2 / col2.T.mean(skipna=True).values[0]
-        col2 = col2.values
-        
-        if output is None:
-            print 'there'
-            output=DataFrame(col2[0],index = period_str) #49632
-        else :
-            try:
-                colu=pd.DataFrame(col2[0],index = period_str)
-                output = output.join(colu, rsuffix='_'+str(group),how='outer')
-            except:
-                print 'exception'
-    #print output
-    if proportion:
-        output = output.div(output.sum(axis=1), axis=0) #pour avoir la proportion de chaque groupe
-    output.plot()
-    plt.show()
+#def graph_ma_classe(CODE_ATC_4, proportion=False):  # code_substance):
+#    ''' Créer le plot de comparaison de consommation totale des groupes par classe'''
+#    plt.close()    
+#    output = None
+#    for group in list(set(base_brute.loc[base_brute['CODE_ATC_4']==CODE_ATC_4,'Id_Groupe'])):
+#        print group
+#        col0 = moving_average_princeps[moving_average_princeps.index == group]
+#        col1 = moving_average_generic[moving_average_generic.index == group]
+#        col2 = col0.add(col1,fill_value=0)
+#        #col2 = col2 / col2.T.mean(skipna=True).values[0]
+#        col2 = col2.values
+#        
+#        if output is None:
+#            print 'there'
+#            output=DataFrame(col2[0],index = period_str) #49632
+#        else :
+#            try:
+#                colu=pd.DataFrame(col2[0],index = period_str)
+#                output = output.join(colu, rsuffix='_'+str(group),how='outer')
+#            except:
+#                print 'exception'
+#    #print output
+#    if proportion:
+#        output = output.div(output.sum(axis=1), axis=0) #pour avoir la proportion de chaque groupe
+#    output.plot()
+#    plt.show()
 
 def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', average = False):
     '''Crée le plot du prix par substance pour tous les médicaments d'une même classe ATC'''
+   
+    # On choisit par défaut l'ATC de niveau 4 pour le display
+    string_atc = 'CODE_ATC_4'
+    
+    # Si on entre un ATC complet, on display l'ATC complet
+    if CODE_ATC != None and len(CODE_ATC) == 7:
+        string_atc = 'CODE_ATC'    
+    
     #Si on rentre un groupe, on détermine le code ATC associé
     if Id_Groupe != None:
-        CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'CODE_ATC'].iloc[0]    
+        CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_atc].iloc[0]    
         print CODE_ATC       
         if not isinstance(CODE_ATC, unicode):
-            print 'CODE_ATC inconnu'
-            
+            print 'CODE_ATC_4 inconnu'
+    
     plt.close()
     assert sorted(period)==period
     assert sorted(period_prix)==period_prix
         
     i=0
-    select = base_brute.loc[:,'CODE_ATC'] == CODE_ATC
+    select = base_brute.loc[:,string_atc] == CODE_ATC
     #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
     for value in set(base_brute.loc[select, color_by]):
         output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dosage]
@@ -178,30 +210,53 @@ def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         if average:
             output = output.mean()
         plt.plot(output.transpose(), color = colors[i])
+        
+        
+        if color_by == 'Id_Groupe':
+            date_generique = int(date_generication_groupe.loc[value])
+            x = 'prix_par_dosage_' + str(date_generique)
+            #print output
+            if average == True:
+                ymax = output[x]
+            else:
+                ymax = max(output[x])
+            print ymax
+            x = get_index(date_generique)
+            plt.vlines(x, 0, ymax, color = colors[i], linestyles = '--')        
+        
         i=i+1
     plt.show()
     
 def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', 
                       make_sum = False, proportion = False, average_over = 12, 
-                      variations = False, display = 'cout'):
+                      variations = False, display = 'cout', write_on = True):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
     '''color_by choisit le champ déterminant pour la couleur'''
     '''make_sum détermine si l'on somme suivant le critère défini par color_by'''
     '''proportion permet d'afficher la proportion de chaque sélection par rapport à la somme totale'''
     '''average over détermine l'amplitude choisie pour le lissage (0 : pas de lissage)'''
     '''variations = True permet d'afficher les variation'''
-    #Si on rentre un groupe, on détermine le code ATC associé
+    
+    # On choisit par défaut l'ATC de niveau 4 pour le display
+    string_atc = 'CODE_ATC_4'
+    
+    # Si on entre un ATC complet, on display l'ATC complet
+    if CODE_ATC != None and len(CODE_ATC) == 7:
+        string_atc = 'CODE_ATC'    
+    
+    #Si on rentre un groupe, on détermine le code ATC niv 4 associé
     if Id_Groupe != None:
-        CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'CODE_ATC'].iloc[0]
+        CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_atc].iloc[0]
         if not isinstance(CODE_ATC, unicode):
-            print 'CODE_ATC inconnu'
+            print 'CODE_ATC_4 inconnu'
+
     
     plt.close()
     assert sorted(period)==period
     assert sorted(period_prix)==period_prix
     i = 0 # Sert pour le choix de la couleur
     
-    select = base_brute.loc[:,'CODE_ATC'] == CODE_ATC    
+    select = base_brute.loc[:, string_atc] == CODE_ATC    
     
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
@@ -225,7 +280,7 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     ax = fig.add_subplot(111)
    
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
-    for value in set(base_brute.loc[base_brute.loc[:,'CODE_ATC']==CODE_ATC, color_by]):
+    for value in set(base_brute.loc[base_brute.loc[:, string_atc]==CODE_ATC, color_by]):
         
         output_group = output.loc[base_brute.loc[select, color_by] == value]        
             
@@ -237,23 +292,44 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
             output_group.columns = range(len(output_group.columns))
         output_group.index = range(len(output_group.index))
         if make_sum:
-            plt.plot(output_group.transpose(), color = colors[i], label = str(value))
+            ax.plot(output_group.transpose(), color = colors[i], label = str(value))
+            if color_by == 'Id_Groupe':
+                date_generique = date_generication_groupe.loc[value]
+                x = get_index(date_generique)
+                ymax = output_group[x]
+                ax.vlines(x,0, ymax, color = colors[i], linestyles = '--')
+                if write_on and color_by == 'Id_Groupe':
+                    princeps = base_brute[base_brute.apply(lambda x: x['Id_Groupe']==value and x['Type'] == 0, axis = 1)]
+                    if len(princeps) != 0:
+                        princeps = princeps.iloc[0]
+                        x = princeps['premiere_vente']
+                        #print(output_group.index)
+                        x = get_index(x)
+                        if x < average_over/2:
+                            x = average_over/2
+                        y = output_group[x]
+                        info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
+                        
+                        print (x, y)
+                        ax.annotate(info_str, xytext=(x,y), xy=(0,0), annotation_clip = False)
+                
         else:
             for j in output_group.index:
                
                 #Mise en place de la légende
-                a = base_brute.loc[select]
-                b = a.loc[base_brute.loc[select, color_by] == value]
-                label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
-                ax.plot(output_group.loc[j,:], color = colors[i]) 
-                x = get_index(b['premiere_vente'].iloc[j]) 
-                if x < average_over/2:
-                    x = average_over/2
-                a = float(output_group.loc[j, x])
-                print type (a)
-                if np.isnan(a):
-                    a = -1
-                xytext = (x, a)
+                if write_on:
+                    a = base_brute.loc[select]
+                    b = a.loc[base_brute.loc[select, color_by] == value]
+                    label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
+                    ax.plot(output_group.loc[j,:], color = colors[i]) 
+                    x = get_index(b['premiere_vente'].iloc[j]) 
+                    if x < average_over/2:
+                        x = average_over/2
+                    a = float(output_group.loc[j, x])
+                    print type (a)
+                    if np.isnan(a):
+                        a = -1
+                    xytext = (x, a)
                 #print type(output_group.loc[j, x+6])
                 
                 ax.annotate(str(label), xytext=xytext, xy=(0,0), annotation_clip=False)
