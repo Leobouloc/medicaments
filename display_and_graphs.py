@@ -8,6 +8,7 @@ Created on Thu Oct 02 10:12:13 2014
 import matplotlib
 
 colors = [hex for name, hex in matplotlib.colors.cnames.iteritems()]
+colors.remove('#FFE4E1')
 #colors =['#002b36', '#073642', '#586e75', '#657b83', '#839496', '#93a1a1', '#eee8d5',
         # '#fdf6e3','#b58900','#cb4b16','#dc322f','#d33682','#6c71c4','#268bd2','#2aa198','#859900']
 
@@ -229,7 +230,7 @@ def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     
 def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', 
                       make_sum = False, proportion = False, average_over = 12, 
-                      variations = False, display = 'cout', write_on = True):
+                      variations = False, display = 'cout', write_on = True, string_atc = 'CODE_ATC_4'):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
     '''color_by choisit le champ déterminant pour la couleur'''
     '''make_sum détermine si l'on somme suivant le critère défini par color_by'''
@@ -238,7 +239,7 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     '''variations = True permet d'afficher les variation'''
     
     # On choisit par défaut l'ATC de niveau 4 pour le display
-    string_atc = 'CODE_ATC_4'
+    #string_atc = 'CODE_ATC'
     
     # Si on entre un ATC complet, on display l'ATC complet
     if CODE_ATC != None and len(CODE_ATC) == 7:
@@ -250,7 +251,6 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         if not isinstance(CODE_ATC, unicode):
             print 'CODE_ATC_4 inconnu'
 
-    
     plt.close()
     assert sorted(period)==period
     assert sorted(period_prix)==period_prix
@@ -279,6 +279,7 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     fig = plt.figure()
     ax = fig.add_subplot(111)
    
+    
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
     for value in set(base_brute.loc[base_brute.loc[:, string_atc]==CODE_ATC, color_by]):
         
@@ -301,18 +302,23 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
                 if write_on and color_by == 'Id_Groupe':
                     princeps = base_brute[base_brute.apply(lambda x: x['Id_Groupe']==value and x['Type'] == 0, axis = 1)]
                     if len(princeps) != 0:
-                        princeps = princeps.iloc[0]
+                        index = princeps['premiere_vente'].argmin()
+                        princeps = princeps.loc[index]
                         x = princeps['premiere_vente']
                         #print(output_group.index)
                         x = get_index(x)
                         if x < average_over/2:
                             x = average_over/2
+                        elif (len(period) - x) < average_over/2:
+                            x = len(period) - average_over/2
                         y = output_group[x]
                         info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
                         
                         print (x, y)
-                        ax.annotate(info_str, xytext=(x,y), xy=(0,0), annotation_clip = False)
-                
+                        if not np.isnan(y):
+                            ax.annotate(info_str, xytext=(x,y), color = colors[i], xy=(0,0), annotation_clip = False)
+                            if x != average_over/2:
+                                ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
         else:
             for j in output_group.index:
                
@@ -332,7 +338,8 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
                     xytext = (x, a)
                 #print type(output_group.loc[j, x+6])
                 
-                ax.annotate(str(label), xytext=xytext, xy=(0,0), annotation_clip=False)
+                ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
+                
                 print xytext
                 
                 
