@@ -5,6 +5,58 @@ Created on Mon Oct 13 10:14:27 2014
 @author: work
 """
 
+def plusieurs_labos_par_princeps(table_groupe):
+    table_groupe = table_groupe[table_groupe['Type'] == 0]
+    return len(set(table_groupe['LABO']))
+    
+
+def nombre_de_nouveaux_princeps(table_groupe, duree=12, niveau_atc = 4):
+    '''determine le nombre de princeps du même labo qui apparaissent dans les deux ans autour de la date de chute'''
+    if niveau_atc == 4:
+        string_atc = 'CODE_ATC_4'
+    elif niveau_atc == 5 or niveau_atc == 6:
+        string_atc = 'CODE_ATC'
+        
+    classe = table_groupe[string_atc].iloc[0]
+    groupe = table_groupe['Id_Groupe'].iloc[0]
+   
+    # On prend  comme labo de référence celui qui commercialise le princeps en premier
+    try:
+        index_princeps = table_groupe[table_groupe['Type'] == 0]['premiere_vente'].argmin()
+        labo = table_groupe[table_groupe['Type'] == 0].loc[index_princeps]['LABO']
+    except:
+        if len(table_groupe[table_groupe['Type'] == 0]) == 0:
+            labo = 'inconnu'
+        else:
+            print 'in else'
+            labo = table_groupe[table_groupe['Type'] == 0].iloc[0]['LABO']
+    
+    # On détermine la date de chute du brevet pour le groupe concerné
+    date_chute = table_groupe.loc[~table_groupe['role'], 'premiere_vente'].min()
+    if date_chute == 200301:
+        return (-1, 0)
+    elif not np.isnan(date_chute):
+        index_date_chute = period.index(date_chute)
+        # On selectionne les princeps de la même classe, de groupes différents et du même Labo
+        table = base_brute
+        table = table[table[string_atc] == classe]
+        table = table[table['Id_Groupe'] != groupe]
+        selector1 = table.groupby('Id_Groupe')['premiere_vente'].apply(lambda x: x.argmin())
+        table = table.loc[selector1]        
+        table = table[table['LABO'] == labo]
+        table = table[table['Type'] == 0]
+        
+        # On sélectionne les medicaments qui sont mis en vente autour de la chute du brevet
+        def temporaire(x):
+            return abs(period.index(x) - index_date_chute) <= duree and period.index(x) != 0
+        selector = table['premiere_vente'].apply(lambda x: temporaire(x))
+        table = table.loc[selector]
+        return [len(set(table['Id_Groupe'])), table['Id_Groupe']]
+
+    else:
+        return (-1, 0)
+    
+
 def prix_moyen(table_groupe, average_over=12, prix='prix', selection='princeps'):
     '''Renvoie simplement le prix moyen des princeps (avant la chute), ou des génériques'''
     assert prix in ['prix_par_dosage', 'prix']
@@ -89,6 +141,7 @@ def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_dosage', s
     else:
         return np.nan        
 
+
 def labo_princeps(table_groupe):
     labo = table_groupe.loc[table_groupe['Type'] == 0, 'LABO']
     if len(labo) != 0:
@@ -106,3 +159,16 @@ def labo_to_int(serie):
             return labos.index(x)
     return serie.apply(lambda x: function(x))
     
+#testo = base_brute.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 6))
+#testu = testo[testo.apply(lambda x: abs(x))<1]
+#plt.hist(list(testu[~testu.isnull()]), bins = 20)
+#plt.show()
+
+#nb_labos_par_princeps = base_brute.groupby('Id_Groupe').apply(lambda x: plusieurs_labos_par_princeps(x))   
+    
+'''Voir pour quels groupes la chute du brevet entraine un nouveau groupe dans la même classe par le même labo'''    
+nb_nouveaux_princeps = base_brute.groupby('Id_Groupe').apply(lambda x : nombre_de_nouveaux_princeps(x))
+nb_nouveaux_princeps = nb_nouveaux_princeps[nb_nouveaux_princeps != (-1,0)]
+nb_nouveaux_princeps = nb_nouveaux_princeps[nb_nouveaux_princeps.apply(lambda x: x[0] != 0)]
+
+
