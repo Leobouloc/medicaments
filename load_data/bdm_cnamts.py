@@ -38,38 +38,38 @@ def recode_dosage_isfloat(value):
     return True
   except ValueError:
     return False
-        
+
 def recode_dosage_sa(table):
     print('dosage ' + str(len(table)))
     #Supprimer le texte en particulier
-    #table = table.loc[table['DOSAGE_SA'].apply(lambda x: x!='NON RENSEIGNE' and x!='NON RENSIGNE' and x!='NON RE' and x!='NR')] 
-    #Supprimer toutes les listes avec du texte 
-    table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace(',','.')    
+    #table = table.loc[table['DOSAGE_SA'].apply(lambda x: x!='NON RENSEIGNE' and x!='NON RENSIGNE' and x!='NON RE' and x!='NR')]
+    #Supprimer toutes les listes avec du texte
+    table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace(',','.')
     table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
     table = table.loc[~table['DOSAGE_SA'].isnull(), :]
     table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(lambda x: float(x))
-    
+
     test_mui = table['UNITE_SA'].str.contains('MUI', na=False)
     table.loc[test_mui,'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('MUI', 'UI')
     table.loc[test_mui,'DOSAGE_SA'] = table.loc[test_mui,'DOSAGE_SA'].apply(lambda x: x*1000000)
-    
+
     test_grammes = table['UNITE_SA'] == 'G'
     table.loc[test_grammes, 'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('G', 'MG')
-    table.loc[test_grammes,'DOSAGE_SA'] = table.loc[test_grammes,'DOSAGE_SA'].apply(lambda x: x*1000)        
-    
-    return table            
-               
-               
-               
+    table.loc[test_grammes,'DOSAGE_SA'] = table.loc[test_grammes,'DOSAGE_SA'].apply(lambda x: x*1000)
+
+    return table
+
+
+
 def recode_nb_unites(table):
     #print('nb_unites ' + str(len(table)))
-    ''' recode les objets avec des slashs : 2/150 ---> 2''' 
-    table = table.loc[~table['NB_UNITES'].isnull(), :]
+    ''' recode les objets avec des slashs : 2/150 ---> 2'''
+    table = table.loc[~table['NB_UNITES'].isnull(), :].copy()
     table['NB_UNITES'] = table['NB_UNITES'].str.replace(',','.')
     table['NB_UNITES'] = table['NB_UNITES'].str.replace(' M','000000')
     table['NB_UNITES'] = table['NB_UNITES'].str.split('/').apply(lambda x: recode_nb_unites_split_func(x))
     table['NB_UNITES'] = table['NB_UNITES'].apply(lambda x: re.findall('\d*\.?\d+',str(x))[0])
-    table['NB_UNITES'] = table['NB_UNITES'].apply(lambda x: float(x))
+    table['NB_UNITES'] = table['NB_UNITES'].astype(float)
     return table
 
 def recode_nb_unites_split_func(x):
@@ -77,34 +77,34 @@ def recode_nb_unites_split_func(x):
     assert(len(x)>0)
     if len(x)==2:
         #Si lettre G est après le slash, on multiplie par la valeur avant le 'G'
-        if len(re.findall('G', x[1])):  
+        if len(re.findall('G', x[1])):
             val = re.findall('\d*\.?\d+',str(x[1]))[0]
             return (float(x[0])*float(val))
         else:
             return (x[0])
     else:
-        return (x[0])            
-            
+        return (x[0])
+
 def recode_labo(table):
     print('labo ' + str(len(table)))
     table['LABO'] = table['LABO'].str.replace('-','')
-    table['LABO'] = table['LABO'].str.replace(' ','')
+    table['LABO'] = table['LABO'].str.replace(' ','')  # On veut vraiment faire ça ?
     return table
-    
+
 #def recode_unites(table):
 #    table = table[~table['UNITE_SA'].isnull()]
 #    #On met les miligrammes en grammes
 #    table.loc[table['UNITE_SA'].str.contains('MG'),'DOSAGE_SA']*=1000
-    
+
 #def recode_microgrammes_en_mg
 
 def bdm_cnamts(info_utiles, unites_par_boite=True):
     ''' charge les info_utiles et crée la variable unites_par_boite '''
     path = os.path.join(path_BDM, "BDM_CIP.xlsx")
-    table_entiere = pd.read_excel(path)
+    table_entiere = pd.read_excel(path, 0)
     table = table_entiere.loc[:, info_utiles]
     if 'DOSAGE_SA' in info_utiles:
-        table = recode_dosage_sa(table) 
+        table = recode_dosage_sa(table)
     if 'NB_UNITES' in info_utiles:
         table = recode_nb_unites(table)
     if 'LABO' in info_utiles:
