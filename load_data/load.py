@@ -23,18 +23,18 @@ def load_all(from_gouv, maj_gouv, from_cnamts):
     # On merge les bases
     base_brute = gouv.merge(cnam, left_on = 'CIP13', right_on='CIP', how='outer')
     base_brute = base_brute.merge(sniiram, left_on='CIP13', right_index=True, how='outer')
-    base_brute = base_brute.merge(prix_dynamiques, left_on = 'CIP13', right_on='CIP', how='outer')
+    base_brute = base_brute.merge(prix_dynamiques, left_on = 'CIP13', right_index=True, how='outer')
     #On remplace les nan des periodes par 0
     # J'ai enlevé la ligne ci dessous car je ne vois pas l'intérêt de conserver les lignes si on ne connait pas le dosage
     #base_brute.fillna(0, inplace=True)
-    
+
     return base_brute
-    
+
 if __name__ == '__main__':
-    
-    info_utiles_from_gouv = ['CIP7', 'CIP13', 'Nom', 'Id_Groupe', 'Prix',
+
+    info_utiles_from_gouv = ['CIP7', 'CIP13', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
                          'Code_Substance', 'Nom_Substance', 'Libelle_ASMR', 'Type',
-                         'Date_declar_commerc', 'Date_AMM', 'Taux_rembours', 
+                         'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                          'indic_droit_rembours', 'Statu_admin_presta',
                          'Ref_Dosage', 'Dosage', 'Label_presta','Valeur_ASMR',
                          'premiere_vente', 'derniere_vente']

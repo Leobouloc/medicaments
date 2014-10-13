@@ -15,55 +15,50 @@ from CONFIG import path_BDM
 
 
 def load_cnamts_prix_harmonise():
-    file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
-    table = pd.read_csv(file, sep=',')
-    #On rend les colonnes compatibles avec 'period'    
-    table.columns = ['CIP']+ ['prix_' + x for x in table.columns[1:]]
-    return table
+    try:
+        file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
+        table = pd.read_csv(file, sep=',')
+        #On rend les colonnes compatibles avec 'period'
+        table.columns = ['CIP']+ ['prix_' + x for x in table.columns[1:]]
+        return table
+    except:
+        table = load_cnamts_prix()
+        file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
+        table.to_csv(file, sep=',')
+        return table
 
 #Creation de la base harmonisée
 def load_cnamts_prix():
     '''On obtient pour chaque CIP13 une liste de tuples Date // Prix qui correspond aux dates et changements de prix'''
     file = os.path.join(path_BDM, 'BDM_PRIX.csv')
     table = pd.read_csv(file, sep=';')
-    table['PRIX_E'] = table['PRIX_E'].apply(lambda x: float(x)/100)
-    test = table.pivot(index='CIP',columns='DATE_APPLI',values='PRIX_E')
-    test.columns = list(pd.Series(test.columns).apply(lambda x: x[6:10] + x[3:5]))
-    test = test.groupby(test.columns, axis=1).sum()
-    test=test.sort(axis=1) #sort by column value
-    
-    #138 correspond à la longeur de 'period', nombre de mois dans la base sniiram
+    table['PRIX_E'] = table['PRIX_E'].astype(float)/100
+    table['date'] = table['DATE_APPLI'].apply(lambda x: x[6:10] + x[3:5])
+
+    assert table.groupby(['date', 'CIP']).size().max() == 2
+    one_value_per_month = table.sort(['date','PRIX_E']).groupby(['date', 'CIP']).last()
+    one_value_per_month.reset_index(inplace=True)
+    assert one_value_per_month.groupby(['date', 'CIP']).size().max() == 1
+
+    table_per_date = one_value_per_month.pivot(index='CIP', columns='date', values='PRIX_E')
+
+    # on veut une valeur par mois, sans trou, correspondant à la base SNIIRAM.
+    cols = table_per_date.columns
+#    debut = min(cols)
+#    fin = max(cols)
+    # 138 correspond à la longeur de 'period', nombre de mois dans la base sniiram
     period_sniiram = ['20'+"%02.f"%x+"%02.f"%y for x in range(3,15) for y in range(1,13)][:138]
-    output = pd.DataFrame(index=test.index, columns=period_sniiram)
-    output[[x for x in period_sniiram if x in list(test.columns)]]=test[[x for x in period_sniiram if x in list(test.columns)]]    
+    output = pd.DataFrame(index=table_per_date.index, columns=period_sniiram)
+    for period in period_sniiram:
+        if period in cols:
+            output[period] = table_per_date[period]
+    # TODO: beaucoup plus beau: ajouter des colonnes à table_per_date, puis
+    # réordonner, ça évite de ré-écrire une table
 
-    ## ATTENTION : On enlève manuellement la ligne vide pour un chargement plus rapide
-    output = output.loc[output.index!=3400926606053,:]
-    # Ici la ligne pour un code réutilisable : output = output.loc[output.apply(lambda x: sum(~x.isnull()),axis=1)!=0,:]
-    output.iloc[:,0] = output.apply(lambda x: x[x.first_valid_index()],axis=1)
-    output=output.apply(lambda x: remplissage_ligne(x), axis=1)
+    output.dropna(how='all', inplace=True)  # output.index == 3400926606053
+    # TODO: voir si mise à jour, sinon mettre le prix à la main
+    # FAB_HT_E = 18000.000 et PRIX_E = 19521.80, DATE_APPLI = 26/11/2014
 
-def remplissage_ligne(ligne):
-    assert np.isnan(ligne[0])==False
-    for i in range(1,len(ligne)):
-        if np.isnan(ligne[i]):
-            ligne[i]=ligne[i-1]
-    return(ligne)
-    #output['CIP']=pd.DataFrame(test.index)
-    return output 
-    
- 
-
-# Pour renvoyer un dictionnaire, utiliser la commande ci dessous   
-#output=test.apply(lambda x: [{'Date' : i,'Prix' : x.loc[~x.isnull()].loc[i]} for i in x.loc[~x.isnull()].index],axis=1)    
-   
-    
-    
-    
-#    table['DATE_APPLI'] = table['DATE_APPLI'].map(lambda t : dt.datetime.strptime(t,"%d/%m/%Y").date())
-#    table['date_appli_str'] = float('NaN')
-#    for idx in table.index:
-#        year = str(table.loc[idx, 'DATE_APPLI'].year)
-#        month = str(0) + str(table.loc[idx, 'DATE_APPLI'].month)
-#        table.loc[idx, 'date_appli_str'] = float(year + month[-2:])
-#    return table
+    output = output.fillna(method='ffill', axis=1)
+    output = output.fillna(method='bfill', axis=1)
+    return output
