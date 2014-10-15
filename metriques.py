@@ -22,15 +22,7 @@ def nombre_de_nouveaux_princeps(table_groupe, duree=12, niveau_atc = 4):
     groupe = table_groupe['Id_Groupe'].iloc[0]
 
     # On prend  comme labo de référence celui qui commercialise le princeps en premier
-    try:
-        index_princeps = table_groupe.loc[table_groupe['Type'] == 0, 'premiere_vente'].argmin()
-        labo = table_groupe[table_groupe['Type'] == 0].loc[index_princeps, 'LABO']
-    except:
-        if not any(table_groupe['Type'] == 0):
-            labo = 'inconnu'
-        else:
-            print 'in else'
-            labo = table_groupe[table_groupe['Type'] == 0].iloc[0]['LABO']
+    labo = labo_princeps(table_groupe)
 
     # On détermine la date de chute du brevet pour le groupe concerné
     date_chute = table_groupe.loc[~table_groupe['role'], 'premiere_vente'].min()
@@ -144,12 +136,19 @@ def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_dosage', s
 
 
 def labo_princeps(table_groupe):
-    labo = table_groupe.loc[table_groupe['Type'] == 0, 'LABO']
-    if len(labo) != 0:
-        return(labo.iloc[0])
-    else:
-        return np.nan
-
+    '''Renvoie le labo qui a produit le princeps le plus ancien du groupe'''
+    try:
+        index_princeps = table_groupe.loc[table_groupe['Type'] == 0, 'premiere_vente'].argmin()
+        labo = table_groupe[table_groupe['Type'] == 0].loc[index_princeps, 'LABO']
+        return labo
+    except:
+        if not any(table_groupe['Type'] == 0):
+            labo = 'princeps inconnu'
+        else:
+            print 'in else'
+            labo = table_groupe[table_groupe['Type'] == 0].iloc[0]['LABO']
+        return labo
+    
 def labo_to_int(serie):
 
     labos = list(set(base_brute['LABO']))
@@ -160,10 +159,10 @@ def labo_to_int(serie):
             return labos.index(x)
     return serie.apply(lambda x: function(x))
 
-#testo = base_brute.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 6))
-#testu = testo[testo.apply(lambda x: abs(x))<1]
-#plt.hist(list(testu[~testu.isnull()]), bins = 20)
-#plt.show()
+testo = base_brute.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 6))
+testu = testo[testo.apply(lambda x: abs(x))<1]
+plt.hist(list(testu[~testu.isnull()]), bins = 20)
+plt.show()
 
 #nb_labos_par_princeps = base_brute.groupby('Id_Groupe').apply(lambda x: plusieurs_labos_par_princeps(x))
 
