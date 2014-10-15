@@ -31,6 +31,7 @@ def select(table):
     return table2
 
 def print_role(data, Type=False):
+    '''Sert dans info_display'''
     if Type:
         assert 'Type' in data.columns
         role = data['Type']
@@ -50,6 +51,9 @@ def info_display(data, input_val = None , name = None ,CIP13 = None, Id_Groupe =
     '''Display des informations sur les medicaments,
         choisir les données à montrer dans "variables",
         return_tab=True si on veut renvoyer un objet, =False pour le print'''
+
+    ###############################################################################        
+    ########### Début : Remplissage automatique des variables
     
     # On choisit par défaut l'ATC de niveau 4 pour le display
     string_atc = 'CODE_ATC_4'
@@ -58,7 +62,7 @@ def info_display(data, input_val = None , name = None ,CIP13 = None, Id_Groupe =
     if CODE_ATC != None and len(CODE_ATC) == 7:
         string_atc = 'CODE_ATC'     
         
-    #Détecte si l'input correspond au groupe, à la classe ou au CIP13
+    #Détecte si l'input correspond au groupe, à la classe (4 ou 5) ou au CIP13
     if input_val != None:  
         if isinstance(input_val, str):
             if len(input_val) == 13:
@@ -74,6 +78,9 @@ def info_display(data, input_val = None , name = None ,CIP13 = None, Id_Groupe =
             Id_Groupe = input_val
         else:
             print 'input val is unidentified'
+
+    ########### Fin : Remplissage automatique des variables        
+    ###############################################################################
     
     if variables==None:
         vars_display=['Id_Groupe','Type','LABO','Date_declar_commerc','prix_par_dosage_201401']
@@ -153,38 +160,28 @@ def graph_ma(group):
     plt.show()
 
 
-#def graph_ma_classe(CODE_ATC_4, proportion=False):  # code_substance):
-#    ''' Créer le plot de comparaison de consommation totale des groupes par classe'''
-#    plt.close()    
-#    output = None
-#    for group in list(set(base_brute.loc[base_brute['CODE_ATC_4']==CODE_ATC_4,'Id_Groupe'])):
-#        print group
-#        col0 = moving_average_princeps[moving_average_princeps.index == group]
-#        col1 = moving_average_generic[moving_average_generic.index == group]
-#        col2 = col0.add(col1,fill_value=0)
-#        #col2 = col2 / col2.T.mean(skipna=True).values[0]
-#        col2 = col2.values
-#        
-#        if output is None:
-#            print 'there'
-#            output=DataFrame(col2[0],index = period_str) #49632
-#        else :
-#            try:
-#                colu=pd.DataFrame(col2[0],index = period_str)
-#                output = output.join(colu, rsuffix='_'+str(group),how='outer')
-#            except:
-#                print 'exception'
-#    #print output
-#    if proportion:
-#        output = output.div(output.sum(axis=1), axis=0) #pour avoir la proportion de chaque groupe
-#    output.plot()
-#    plt.show()
-
-def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', average = False):
+def graph_prix_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', average = False):
     '''Crée le plot du prix par substance pour tous les médicaments d'une même classe ATC'''
-   
+
+    ###############################################################################        
+    ########### Début : Remplissage automatique des variables
+
     # On choisit par défaut l'ATC de niveau 4 pour le display
     string_atc = 'CODE_ATC_4'
+
+    if input_val != None:  
+        if isinstance(input_val, str):
+            if len(input_val) == 5:
+                CODE_ATC = input_val
+            elif len(input_val) == 7:
+                CODE_ATC = input_val
+                string_atc = 'CODE_ATC'
+            else:
+                print 'input_val is unidentified string'
+        elif isinstance(input_val, int):
+            Id_Groupe = input_val
+        else:
+            print 'input val is unidentified'
     
     # Si on entre un ATC complet, on display l'ATC complet
     if CODE_ATC != None and len(CODE_ATC) == 7:
@@ -196,6 +193,9 @@ def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         print CODE_ATC       
         if not isinstance(CODE_ATC, unicode):
             print 'CODE_ATC_4 inconnu'
+
+    ########### Fin : Remplissage automatique des variables        
+    ###############################################################################
     
     plt.close()
     assert sorted(period)==period
@@ -228,9 +228,9 @@ def graph_prix_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         i=i+1
     plt.show()
     
-def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', 
+def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', 
                       make_sum = False, proportion = False, average_over = 12, 
-                      variations = False, display = 'cout', write_on = True, string_atc = 'CODE_ATC_4'):
+                      variations = False, display = 'cout', write_on = True):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
     '''color_by choisit le champ déterminant pour la couleur'''
     '''make_sum détermine si l'on somme suivant le critère défini par color_by'''
@@ -238,8 +238,26 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     '''average over détermine l'amplitude choisie pour le lissage (0 : pas de lissage)'''
     '''variations = True permet d'afficher les variation'''
     
+           
+    ###############################################################################        
+    ########### Début : Remplissage automatique des variables 
+   
     # On choisit par défaut l'ATC de niveau 4 pour le display
-    #string_atc = 'CODE_ATC'
+    string_atc = 'CODE_ATC_4'
+
+    if input_val != None:  
+        if isinstance(input_val, str):
+            if len(input_val) == 5:
+                CODE_ATC = input_val
+            elif len(input_val) == 7:
+                CODE_ATC = input_val
+                string_atc = 'CODE_ATC'
+            else:
+                print 'input_val is unidentified string'
+        elif isinstance(input_val, int):
+            Id_Groupe = input_val
+        else:
+            print 'input val is unidentified'
     
     # Si on entre un ATC complet, on display l'ATC complet
     if CODE_ATC != None and len(CODE_ATC) == 7:
@@ -250,6 +268,10 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_atc].iloc[0]
         if not isinstance(CODE_ATC, unicode):
             print 'CODE_ATC_4 inconnu'
+            
+    ########### Fin : Remplissage automatique des variables        
+    ###############################################################################     
+    ########### Début : Selection des données à visualiser 
 
     plt.close()
     assert sorted(period)==period
@@ -275,11 +297,14 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
     
     # Sert pour le calcul des proportions et visualisation du Total sur classe
     sum_output = output.sum(axis=0, skipna=True)
+
+    ########### Fin : Selection des données à visualiser        
+    ###############################################################################     
+    ########### Début : Visualisation 
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
-   
-    
+      
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
     for value in set(base_brute.loc[base_brute.loc[:, string_atc]==CODE_ATC, color_by]):
         
@@ -292,6 +317,8 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
         else:
             output_group.columns = range(len(output_group.columns))
         output_group.index = range(len(output_group.index))
+        ###########################################################################     
+        ####### Début : Visualisation/ Somme sur les groupes               
         if make_sum:
             ax.plot(output_group.transpose(), color = colors[i], label = str(value))
             if color_by == 'Id_Groupe':
@@ -319,6 +346,9 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
                             ax.annotate(info_str, xytext=(x,y), color = colors[i], xy=(0,0), annotation_clip = False)
                             if x != average_over/2:
                                 ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
+        ####### Fin : Visualisation/ Somme sur les groupes        
+        ###########################################################################     
+        ####### Début : Visualisation/ Pas de somme sur les groupes 
         else:
             for j in output_group.index:
                
@@ -339,13 +369,15 @@ def graph_classe(CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe',
                 #print type(output_group.loc[j, x+6])
                 
                 ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
-                
                 print xytext
-                
-                
-        print i
+        ####### Fin : Visualisation/ Pas de somme sur les groupes        
+        ###########################################################################
+                   
+        print i # i sert pour le choix de la couleur
         i = i + 1
     if proportion == False and variations == False:
         plt.plot(sum_output, color = 'k', linestyle = '-', linewidth = 2.0, label = 'Total Classe')
     plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=1)
     plt.show()
+    ########### Fin : Visualisation       
+    ############################################################################### 
