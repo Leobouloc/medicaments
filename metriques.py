@@ -5,6 +5,44 @@ Created on Mon Oct 13 10:14:27 2014
 @author: work
 """
 
+def is_me_to(table_classe):
+    group_start = table_classe.groupby('Id_Groupe')['premiere_vente'].min()
+    table_classe['premier_de_la_classe'] = table_classe['premiere_vente'].apply(lambda x: x == group_start.min())
+    is_me_to = table_classe.apply(lambda x: x['Valeur_ASMR'] == 'V' and not x['premier_de_la_classe'] and x['Type'] == 0, axis=1)
+    return is_me_to
+
+
+### Utilité discutable, ne pas supprimer
+#def cout_classe (code_atc):
+#    '''Calcul la différence de prix si tous les médicaments étaient remboursés au prix du moins cher dans la classe'''
+#    base_classe = base_brute.loc[base_brute['CODE_ATC']==code_atc,:]
+#    prix_min_par_dosage=base_classe[period_prix_par_dosage].apply(lambda column: min(column))
+#    # On considere que tous les médicaments d'ASMR V peuvent être remplacés par un médicament de la même classe (dosage équivalent) moins cher
+#    # On calcule donc la différence de cout pour tous les médicaments d'ASMR V
+#    cout = sum(base_classe.loc[base_classe['Valeur_ASMR']=='V',:].apply(lambda x: dot(x.loc[period_dosage_rembourse],(x[period_prix_par_dosage]-prix_min_par_dosage)),axis=1))
+#    return cout
+#
+#def cout_groupe (id_groupe):
+#    '''Calcul la différence de prix si tous les médicaments étaient remboursés au prix du moins cher dans le groupe'''
+#    base_groupe= base_brute.loc[base_brute['Id_Groupe']==id_groupe,:]
+#    prix_min_par_dosage=base_groupe[period_prix_par_dosage].apply(lambda column: min(column))
+#    # On considere que tous les médicaments d'ASMR V peuvent être remplacés par un médicament de la même classe (dosage équivalent) moins cher
+#    # On calcule donc la différence de cout pour tous les médicaments d'ASMR V
+#    cout = sum(base_groupe.loc[base_groupe['Valeur_ASMR']=='V',:].apply(lambda x: dot(x.loc[period_dosage_rembourse],(x[period_prix_par_dosage]-prix_min_par_dosage)),axis=1))
+#    return cout
+#
+#def dot(a,b):
+#    assert sum(b.isnull())==0
+#    x=a
+#    y=b
+#    x.index = y.index
+#    x_null = x.isnull()
+#    x=x[~x_null]
+#    y=y[~x_null]
+#    return sum(x*y)
+
+
+
 def plusieurs_labos_par_princeps(table_groupe):
     labos = table_groupe.loc[table_groupe['Type'] == 0, 'LABO']
     return len(set(labos))
