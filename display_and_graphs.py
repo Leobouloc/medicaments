@@ -24,7 +24,6 @@ def class_count(niveau = 4):
         print str(code) + ' --->> ' + str(len(b))
         print b
 
-
 def select(table):
     ''' Permet d'appliquer les conditions (ci dessus) à la table '''
     table2 = table.loc[cond.index[cond]]
@@ -35,7 +34,7 @@ def print_role(data, Type=False):
     if Type:
         assert 'Type' in data.columns
         role = data['Type']
-        assert any(role == 0) # Il y a nécéssairement un princeps
+#        assert any(role == 0) # Il y a nécéssairement un princeps
         print('\n *** princeps ***' )
         print (data[role == 0])
         if any(role == 1):
@@ -160,14 +159,13 @@ def graph_ma(group):
     plt.show()
 
 
-def graph_prix_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', average = False):
+def graph_prix_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', average = False, string_atc = 'CODE_ATC_4'):
     '''Crée le plot du prix par substance pour tous les médicaments d'une même classe ATC'''
 
     ###############################################################################        
     ########### Début : Remplissage automatique des variables
 
     # On choisit par défaut l'ATC de niveau 4 pour le display
-    string_atc = 'CODE_ATC_4'
 
     if input_val != None:  
         if isinstance(input_val, str):
@@ -210,8 +208,9 @@ def graph_prix_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color
         #output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
         if average:
             output = output.mean()
-        plt.plot(output.transpose(), color = colors[i])
-        
+            plt.plot(output.transpose(), color = colors[i], label = str(value))
+        else:
+            plt.plot(output.transpose(), color = colors[i])
         
         if color_by == 'Id_Groupe':
             date_generique = int(date_generication_groupe.loc[value])
@@ -226,6 +225,7 @@ def graph_prix_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color
             plt.vlines(x, 0, ymax, color = colors[i], linestyles = '--')        
         
         i=i+1
+    plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=1)
     plt.show()
     
 def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by = 'Id_Groupe', 
@@ -243,7 +243,7 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
     ########### Début : Remplissage automatique des variables 
    
     # On choisit par défaut l'ATC de niveau 4 pour le display
-    string_atc = 'CODE_ATC_4'
+    string_atc = 'CODE_ATC'
 
     if input_val != None:  
         if isinstance(input_val, str):
