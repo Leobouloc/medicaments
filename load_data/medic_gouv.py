@@ -24,6 +24,7 @@ dico_variables = dict(
               'etat_commercialisation', 'Date_declar_commerc', 'CIP13',
               'aggrement_collectivites', 'Taux_rembours', 'Prix',
               'indic_droit_rembours'],
+    CPD_bdpm=['CIS', 'Prescription'],
     GENER_bdpm=['Id_Groupe', 'Nom_Groupe', 'CIS', 'Type', 'Num_Tri'],
     COMPO_bdpm=['CIS', 'Element_Pharma', 'Code_Substance', 'Nom_Substance',
                 'Dosage', 'Ref_Dosage', 'Nature_Composant',
@@ -116,7 +117,24 @@ def recode_ref_dosage(table):
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('sachet dose', 'sachet-dose')
     table['Ref_Dosage'] = table['Ref_Dosage'].apply(recode_litre_en_ml)
     return table
+    
 
+def recode_nom_substance_lambda(string):
+    parentesis = re.findall('\(.+\)', string)
+    if len(parentesis) == 1:
+        parentesis = parentesis[0]
+        string = string.replace(parentesis, '')
+        parentesis = parentesis[1:]
+        parentesis = parentesis[:-1]
+        string = parentesis + ' ' + string
+        string = string[:-1]
+    return string
+
+
+def recode_nom_substance(table):
+    assert 'Nom_Substance' in table.columns
+    table['Nom_Substance'] = table['Nom_Substance'].apply(recode_nom_substance_lambda)
+    return table
 
 def recode_PVC(chaine):
     if 'PVC' in chaine:
@@ -321,6 +339,7 @@ def table_update(table):
 #            print(row)
 #            pdb.set_trace()
 
+
 def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
     ''' renvoie les tables fusionnées issues medicament.gouv.fr
         si var_to_keep est rempli, on ne revoit que la liste des variables
@@ -359,6 +378,8 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
                 tab = recode_label_presta(tab)
             if 'Prix' in intersect:
                 tab = recode_prix(tab)
+            if 'Nom_Substance' in intersect:
+                tab = recode_nom_substance(tab)
             if output is None:
                 output = tab
                 print("la première table est " + name + " , son nombre de " +
@@ -386,7 +407,9 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
                 output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
 
     if 'nb_Ref_Dosage' in var_to_keep:
-      output['nb_Ref_Dosage'] = table_update(output)
+        output['nb_Ref_Dosage'] = table_update(output)
+#    if 'mode_prise' in var_to_keep:
+#        output['mode_prise'] = mode_prise(output)       
     
     return output
 
