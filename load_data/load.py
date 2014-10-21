@@ -14,8 +14,11 @@ maj_gouv = 'maj_20140915122241'
 
 def load_all(from_gouv, maj_gouv, from_cnamts):
     # Chargement des données médicaments.gouv et cnamts
+    print 'Loading medic.gouv'
     gouv = mg.load_medic_gouv(maj_gouv, var_to_keep=from_gouv, CIP_not_null=True)
+    print 'Loading cnamts'
     cnam = cnamts.bdm_cnamts(from_cnamts)
+    print 'Loading Sniiram extract'
     # Chargement de la base Sniiram
     sniiram = load_sniiram()
     #Chargement des prix dynamiques
