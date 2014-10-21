@@ -82,7 +82,7 @@ def info_display(data, input_val = None , name = None ,CIP13 = None, Id_Groupe =
     ###############################################################################
     
     if variables==None:
-        vars_display=['Id_Groupe','Type','LABO','Date_declar_commerc','prix_par_dosage_201401']
+        vars_display=['Id_Groupe','Type','LABO','Date_declar_commerc','prix_par_dj_201401']
     else :
         vars_display=variables
     if name != None:
@@ -203,7 +203,7 @@ def graph_prix_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color
     select = base_brute.loc[:,string_atc] == CODE_ATC
     #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
     for value in set(base_brute.loc[select, color_by]):
-        output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dosage]
+        output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dj]
         output.index = base_brute[select].loc[base_brute.loc[select, color_by] == value, 'CIP13']
         #output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
         if average:
@@ -214,8 +214,7 @@ def graph_prix_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color
         
         if color_by == 'Id_Groupe':
             date_generique = int(date_generication_groupe.loc[value])
-            x = 'prix_par_dosage_' + str(date_generique)
-            #print output
+            x = 'prix_par_dj_' + str(date_generique)
             if average == True:
                 ymax = output[x]
             else:
@@ -238,6 +237,7 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
     '''average over détermine l'amplitude choisie pour le lissage (0 : pas de lissage)'''
     '''variations = True permet d'afficher les variation'''
     
+    assert display in ['cout', 'volume']
            
     ###############################################################################        
     ########### Début : Remplissage automatique des variables 
@@ -249,6 +249,7 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
         if isinstance(input_val, str):
             if len(input_val) == 5:
                 CODE_ATC = input_val
+                string_atc = 'CODE_ATC_4'
             elif len(input_val) == 7:
                 CODE_ATC = input_val
                 string_atc = 'CODE_ATC'
@@ -282,14 +283,14 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
     
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
-        tab1 = base_brute.loc[select, period_dosage_rembourse]
-        tab2 = base_brute.loc[select, period_prix_par_dosage]
+        tab1 = base_brute.loc[select, period_nb_dj_rembourse]
+        tab2 = base_brute.loc[select, period_prix_par_dj]
         #Faire la moyenne
         tab1.columns = period
         tab2.columns = period
         output = tab1 * tab2
-    elif display == 'dosage':
-        output = base_brute.loc[select, period_dosage_rembourse]
+    elif display == 'volume':
+        output = base_brute.loc[select, period_nb_dj_rembourse]
     
     if variations:
         output = evolution(output)
