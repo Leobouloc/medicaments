@@ -17,6 +17,14 @@ def lambda_func(x):
     else:
         return 0
     return is_me_too
+    
+def nb_groupes_avant(table, ligne):
+    code_atc = ligne['CODE_ATC_4']
+    date = ligne['premiere_vente']
+    table2 = table[table['CODE_ATC_4'] == code_atc]
+    selector = table2['premiere_vente'] < date
+    nb_groupes = table2.loc[selector, 'Id_Groupe'].nunique()
+    return nb_groupes
    
 
 #index = pd.Series(base_brute.index, index = base_brute.index)
@@ -147,8 +155,8 @@ def prix_moyen(table_groupe, average_over=12, prix='prix', selection='princeps')
         
 global somme_classe_avant
 global somme_classe_apres     
-somme_classe_avant = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
-somme_classe_apres = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
+#somme_classe_avant = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
+#somme_classe_apres = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
 
 def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, proportion = False, somme_classe_avant = somme_classe_avant, somme_classe_apres = somme_classe_apres):
     date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()    
@@ -273,43 +281,7 @@ def labo_to_int(serie):
     return serie.apply(lambda x: function(x))
 
 
-def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False):
-    test = pd.merge(pd.DataFrame(serie1), pd.DataFrame(serie2), left_index = True, right_index = True, how='inner')
-    if isinstance(color_serie, str):
-        test.columns = ['0_x', '0_y']
-        plt.scatter(test['0_x'], test['0_y'])
-    else:
-        test = pd.merge(test, pd.DataFrame(color_serie), left_index = True, right_index = True, how='inner')
-        test.columns = ['0_x', '0_y', '0_z']
-        plt.scatter(test['0_x'], test['0_y'], c = test['0_z'], s=40, lw = 0)
-        plt.hot()
-    if describe == 'describe':
-        obj = test.groupby('0_x').describe()
-    elif describe == 'mean':
-        obj = test.groupby('0_x').mean()
-    elif describe == 'min_max':
-        obj = [test.groupby('0_x').min(), test.groupby('0_x').max()]
-    elif describe == 'count':
-        obj = test.groupby('0_x').count()
-        
-    if return_obj:
-        plt.show()
-        return obj
-    elif describe != '':
-        print obj
-        plt.show()
-    else:
-        plt.show()
-   
-def panda_merge(*series):
-    test = pd.DataFrame(series[0])
-    for i in range(1, len(series)):
-        test = pd.merge(test, pd.DataFrame(series[i]), left_index = True, right_index = True, how='inner')
-    return test
- 
-def dot_prod_series(a, b):
-    b.index = a.index
-    return a*b
+
 
 def taux_rembours_float(string):
     if string == '65 %':
@@ -326,14 +298,18 @@ def taux_rembours_float(string):
 #nombre_de_labos_par_groupe = base_brute.groupby('Id_Groupe').apply(lambda x: x['LABO'].nunique())
 #nombre_de_generiques_par_groupe = base_brute.groupby('Id_Groupe').apply(lambda x: x.loc[x['Type']!=0, 'LABO'].nunique())
 
-a=base_brute.groupby('CODE_ATC_4').apply(is_me_too).values
-a = list(a)
-while 0 in a:
-    a.remove(0)
-selector = base_brute['CIP7'].apply(lambda x: x in a)
-base_brute[selector].apply(lambda x: volume_entree_princeps_lambda(base_brute, x)) 
-
-
+#a=base_brute.groupby('CODE_ATC_4').apply(is_me_too).values
+#a = list(a)
+#
+#while 0 in a:
+#    a.remove(0)
+#selector = base_brute['CIP7'].apply(lambda x: x in a)
+#var_vol_me_too = base_brute[selector].apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis = 1) 
+#base_brute = base_brute.merge(pd.DataFrame(var_vol_me_too, columns = ['var_vol_me_too']), how = 'left', left_index = True, right_index = True)
+#
+#base_brute['nb_groupes_anterieurs'] = np.nan
+## var_vol_me_too
+#base_brute['nb_groupes_anterieurs'] = base_brute[base_brute['var_vol_me_too'].notnull()].apply(lambda x: nb_groupes_avant(base_brute, x), axis = 1)
 
 try:
     var_vol
