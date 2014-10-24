@@ -123,7 +123,7 @@ def moving_average(table, size = 12):
 def evolution(table):
     '''Calcul des differences de consommation'''
     evolution = pd.DataFrame(index = table.index, columns = period[1:])
-    table[table == 0] = None
+#    table[table == 0] = None
     last_month = table[period[0]]
     for month in period[1:]:
         evolution[month] = (table[month] - last_month)#/last_month

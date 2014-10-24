@@ -46,7 +46,7 @@ def recode_dosage_sa(table):
     #Supprimer toutes les listes avec du texte
     table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace(',','.')
     table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
-    table = table.loc[~table['DOSAGE_SA'].isnull(), :]
+    table = table.loc[table['DOSAGE_SA'].notnull(), :]
     table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(lambda x: float(x))
 
     test_mui = table['UNITE_SA'].str.contains('MUI', na=False)
