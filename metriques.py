@@ -8,9 +8,22 @@ Created on Mon Oct 13 10:14:27 2014
 def is_me_too(table_classe):
     group_start = table_classe.groupby('Id_Groupe')['premiere_vente'].min()
     table_classe['premier_de_la_classe'] = table_classe['premiere_vente'].apply(lambda x: x == group_start.min())
-    is_me_too = table_classe.apply(lambda x: x['Valeur_ASMR'] == 'V' and not x['premier_de_la_classe'] and x['Type'] == 0, axis=1)
-    return is_me_too.any()
+    me_too = table_classe.apply(lambda x: lambda_func(x), axis=1)
+    return me_too
+    
+def lambda_func(x):
+    if x['Valeur_ASMR'] == 'V' and not x['premier_de_la_classe'] and x['Type'] == 0:
+        return x['CIP7']
+    else:
+        return 0
+    return is_me_too
+   
 
+#index = pd.Series(base_brute.index, index = base_brute.index)
+#index.apply(lambda x: lambda_func(base_brute, x))
+#
+#is_me_too = index.apply(lambda x: lambda_func(base_brute, x))
+    
 ### Utilité discutable, ne pas supprimer
 #def cout_classe (code_atc):
 #    '''Calcul la différence de prix si tous les médicaments étaient remboursés au prix du moins cher dans la classe'''
@@ -138,15 +151,17 @@ somme_classe_avant = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum(
 somme_classe_apres = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
 
 def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, proportion = False, somme_classe_avant = somme_classe_avant, somme_classe_apres = somme_classe_apres):
+    date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()    
+    return var_volume(table_groupe, date, average_over, span, center, proportion, somme_classe_avant, somme_classe_apres)
+    
+def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, proportion = False, somme_classe_avant = somme_classe_avant, somme_classe_apres = somme_classe_apres):
     '''Calcule la variation relative de volume sur un an avant et après la chute de brevet pour le groupe'''
     '''Proportion = True renvoie la variation par rapport au volume de la classe'''
     '''Span : écart additionnel au centre'''
     '''Center : centre de la moyenne (par défaut la chute du brevet)'''
-
-    date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()
-    if not np.isnan(date_chute):
-        chute_moins = period.index(date_chute) - average_over - span + center
-        chute_plus = period.index(date_chute) + average_over + span + center
+    if not np.isnan(date):
+        chute_moins = period.index(date) - average_over - span + center
+        chute_plus = period.index(date) + average_over + span + center
         chute_moins = max(0, chute_moins)
         chute_plus = min(chute_plus, len(period))
         if chute_plus < average_over or chute_moins > len(period) - average_over:
@@ -170,16 +185,32 @@ def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, pro
             return np.nan
     else:
         return np.nan
-    
-def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6):
+         
+        
+def volume_entree_princeps_lambda(base_brute, ligne):   
+    date = ligne['premiere_vente']
+    if not np.isnan(date) and date != 200301:
+        string_select = 'CODE_ATC_4'
+        code_atc = ligne[string_select]
+        table_classe = base_brute[base_brute[string_select] == code_atc]
+        var_vol = var_volume(table_classe, date, average_over=12, span = 0, center = 0, proportion = False, somme_classe_avant = somme_classe_avant, somme_classe_apres = somme_classe_apres)
+        return var_vol
+    else:
+        return np.nan
+
+#test = base_brute[base_brute['Type'] == 0].apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis = 1)
+   
+def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6):   
+   date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()
+   return var_prix(table_groupe, date_chute, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6)
+       
+def var_prix(table_groupe, date, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6):
     '''Calcule la variation relative de prix pour un an avant et après la chute de brevet pour le groupe'''
     '''selection = "groupe" : ecart relatif du prix moyen des médicaments du groupe avant et après la chute'''
     '''selection = "princeps" : ecart relatif du prix moyen des princeps avant et après la chute'''
     '''selection = "ecart princeps_generique" : ecart de prix entre le princeps et les génériques mis sur le marché'''
     assert prix in ['prix_par_dj', 'prix'] # C'est bê te, c'est pareil (??)
     assert selection in ['groupe', 'princeps', 'ecart_princeps_generique']
-
-    date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()
 
     if prix == 'prix_par_dj':
         var_prix = period_prix_par_dosage
@@ -189,9 +220,9 @@ def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_dj', selec
     if selection == 'princeps':
         table_groupe = table_groupe[table_groupe['Type'] == 0]
 
-    if not np.isnan(date_chute):
-        chute_moins = period.index(date_chute) - average_over - span
-        chute_plus = period.index(date_chute) + average_over + span
+    if not np.isnan(date):
+        chute_moins = period.index(date) - average_over - span
+        chute_plus = period.index(date) + average_over + span
         chute_moins = max(0, chute_moins)
         chute_plus = min(chute_plus, len(period))
         if selection in ['groupe', 'princeps']:
@@ -225,7 +256,7 @@ def labo_princeps(table_groupe):
         return labo
     except:
         if not any(table_groupe['Type'] == 0):
-            labo = 'princeps inconnu'
+            labo = np.nan#'princeps inconnu'
         else:
             print 'in else'
             labo = table_groupe[table_groupe['Type'] == 0].iloc[0]['LABO']
@@ -250,8 +281,8 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
     else:
         test = pd.merge(test, pd.DataFrame(color_serie), left_index = True, right_index = True, how='inner')
         test.columns = ['0_x', '0_y', '0_z']
-        plt.scatter(test['0_x'], test['0_y'], c = test['0_z'])
-        plt.gray()
+        plt.scatter(test['0_x'], test['0_y'], c = test['0_z'], s=40, lw = 0)
+        plt.hot()
     if describe == 'describe':
         obj = test.groupby('0_x').describe()
     elif describe == 'mean':
@@ -275,9 +306,35 @@ def panda_merge(*series):
     for i in range(1, len(series)):
         test = pd.merge(test, pd.DataFrame(series[i]), left_index = True, right_index = True, how='inner')
     return test
-    
+ 
+def dot_prod_series(a, b):
+    b.index = a.index
+    return a*b
+
+def taux_rembours_float(string):
+    if string == '65 %':
+        return 0.65
+    elif string == '30 %':
+        return 0.30
+    elif string == '15 % ':
+        return 0.15
+    elif string == '100 %':
+        return 1
+    else:
+        return np.nan
+   
 #nombre_de_labos_par_groupe = base_brute.groupby('Id_Groupe').apply(lambda x: x['LABO'].nunique())
 #nombre_de_generiques_par_groupe = base_brute.groupby('Id_Groupe').apply(lambda x: x.loc[x['Type']!=0, 'LABO'].nunique())
+
+a=base_brute.groupby('CODE_ATC_4').apply(is_me_too).values
+a = list(a)
+while 0 in a:
+    a.remove(0)
+selector = base_brute['CIP7'].apply(lambda x: x in a)
+base_brute[selector].apply(lambda x: volume_entree_princeps_lambda(base_brute, x)) 
+
+
+
 try:
     var_vol
 except: 
@@ -288,7 +345,7 @@ except:
     var_prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_chute_brevet(x, average_over = 12, span = 10, selection='ecart_princeps_generique'))
     
     vol = base_brute.groupby('Id_Groupe').apply(lambda x: volume_moyen(x, average_over=12, selection='princeps'))
-    prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_moyen(x, average_over=12, selection='princeps'))
+    prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_moyen(x, average_over=12, selection='princeps', prix='prix_par_dj'))
     
     taux_rembours = base_brute.groupby('Id_Groupe')['Taux_rembours'].apply(lambda x: x.iloc[0])
     
@@ -309,12 +366,12 @@ except:
     #nb_labos_par_groupe = base_brute.groupby('Id_Groupe').apply(lambda x: x['LABO'].nunique())    
     
     '''Voir pour quels groupes la chute du brevet entraine un nouveau groupe dans la même classe par le même labo'''
-    nb_nouveaux_princeps = base_brute.groupby('Id_Groupe').apply(lambda x : nombre_de_nouveaux_princeps(x, sel_labo=False, duree = 20))
-    nb_nouveaux_princeps = base_brute.groupby('Id_Groupe').apply(lambda x : x['C'])
-    code_du_groupe = base_brute.groupby('Id_Groupe').CODE_ATC.apply(lambda x: x.iloc[0])
-    nb_nouveaux_princeps = nb_nouveaux_princeps[nb_nouveaux_princeps != (-1,0)]
-    nb_nouveaux_princeps = nb_nouveaux_princeps[nb_nouveaux_princeps.apply(lambda x: x[0] != 0)]
-    
+#    nb_nouveaux_princeps = base_brute.groupby('Id_Groupe').apply(lambda x : nombre_de_nouveaux_princeps(x, sel_labo=False, duree = 20))
+#    nb_nouveaux_princeps = base_brute.groupby('Id_Groupe').apply(lambda x : x['C'])
+#    code_du_groupe = base_brute.groupby('Id_Groupe').CODE_ATC.apply(lambda x: x.iloc[0])
+#    nb_nouveaux_princeps = nb_nouveaux_princeps[nb_nouveaux_princeps != (-1,0)]
+#    nb_nouveaux_princeps = nb_nouveaux_princeps[nb_nouveaux_princeps.apply(lambda x: x[0] != 0)]
+#    
     '''Visualisation : variation de volume en fonction du nombre de labos créant des princeps (par ex)'''
     #test = pd.merge(pd.DataFrame(nb_labos_par_princeps), pd.DataFrame(testo), left_index = True, right_index = True, how='inner')
     #test = pd.merge(test, pd.DataFrame(code_du_groupe), left_index = True, right_index = True, how='inner')
