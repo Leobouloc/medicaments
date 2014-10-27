@@ -5,6 +5,8 @@ Created on Fri Oct 24 16:39:30 2014
 @author: work
 """
 
+import numpy
+
 def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, smooth_avr = 20, xlabel = '', ylabel = '', title = ''):
 
     def movingaverage(interval, window_size):

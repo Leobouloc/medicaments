@@ -345,8 +345,8 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
                         print (x, y)
                         if not np.isnan(y):
                             ax.annotate(info_str, xytext=(x,y), color = colors[i], xy=(0,0), annotation_clip = False)
-                            if x != average_over/2:
-                                ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
+#                            if x != average_over/2:
+#                                ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
         ####### Fin : Visualisation/ Somme sur les groupes        
         ###########################################################################     
         ####### Début : Visualisation/ Pas de somme sur les groupes 
