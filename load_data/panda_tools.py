@@ -5,12 +5,16 @@ Created on Fri Oct 24 16:39:30 2014
 @author: work
 """
 
-def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, smooth_avr = 20):
-    
+def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, smooth_avr = 20, xlabel = '', ylabel = '', title = ''):
+
     def movingaverage(interval, window_size):
         window= numpy.ones(int(window_size))/float(window_size)
         return numpy.convolve(interval, window, 'same')    
-    
+    def avr_in_window(x, step , test):
+        selector = test.apply(lambda ligne: x-step/2 <= ligne['x'] and ligne['x']<x+step/2, axis = 1)
+        avr = test.loc[selector, 'y'].mean()
+        return(avr)
+        
     test = pd.merge(pd.DataFrame(serie1), pd.DataFrame(serie2), left_index = True, right_index = True, how='inner')    
     test.dropna(inplace = True)
     if isinstance(color_serie, str):
@@ -28,12 +32,24 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
         test.columns = ['x', 'y', 'z']
         test = test.sort('x')
         test = test[test['y'] != np.inf]
-        plt.scatter(test['x'], test['y'], c = test['z'], s=40, lw = 0)
+        plt.scatter(test['x'], test['y'], c = test['z'], s=40, lw = 0.1)
         plt.hot()
         
         if smooth_avr != None:
             y_av = movingaverage(test['y'], smooth_avr)
             plt.plot(test['x'], y_av,"r")      
+            
+            
+            max_range = test['x'].max()
+            step = max_range / smooth_avr
+            x_curve = [step/2 + step * i for i in range(smooth_avr)]
+            y_curve = [avr_in_window(x, step, test) for x in x_curve]
+            plt.plot(x_curve, y_curve, "g") 
+    
+
+    plt.xlabel(xlabel)    
+    plt.ylabel(ylabel)
+    plt.title(title)
         
     if describe == 'describe':
         obj = test.groupby('0_x').describe()
