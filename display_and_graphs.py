@@ -243,7 +243,7 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
     ########### Début : Remplissage automatique des variables 
    
     # On choisit par défaut l'ATC de niveau 4 pour le display
-    string_atc = 'CODE_ATC'
+    string_atc = 'CODE_ATC_4'
 
     if input_val != None:  
         if isinstance(input_val, str):
@@ -345,8 +345,10 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
                         print (x, y)
                         if not np.isnan(y):
                             ax.annotate(info_str, xytext=(x,y), color = colors[i], xy=(0,0), annotation_clip = False)
-#                            if x != average_over/2:
-#                                ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
+                            x = princeps['premiere_vente']
+                            x = get_index(x)
+                            y = output_group[x]
+                            ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
         ####### Fin : Visualisation/ Somme sur les groupes        
         ###########################################################################     
         ####### Début : Visualisation/ Pas de somme sur les groupes 
