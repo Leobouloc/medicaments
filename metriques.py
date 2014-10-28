@@ -4,29 +4,31 @@ Created on Mon Oct 13 10:14:27 2014
 
 @author: work
 """
+import pandas as pd
+from panda_tools import panda_merge
 
 global somme_classe     
 somme_classe = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
 
 
 def is_me_too(table_classe): 
-    ''' renvoie le CIP7 si c'est un me-too, 0 sinon'''
-    group_start = table_classe.groupby('Id_Groupe')['premiere_vente'].min()
-    table_classe['premier_de_la_classe'] = table_classe['premiere_vente'].apply(lambda x: x == group_start.min())
-    me_too = table_classe.apply(lambda ligne: lambda_func(ligne), axis=1)
-    return me_too
+    ''' renvoie les Id groupes des me-too (sans considération de l'ASMR)'''
+    group_start = table_classe.groupby('Id_Groupe')['premiere_vente'].min() # Premiere vente pour chaque groupe la classe
+    class_start = group_start.min()
+    later_groups = list(group_start.index[group_start != class_start])
+    return later_groups
     
 def lambda_func(ligne):
     '''renvoie le CIP7 si c'est un me-too, 0 sinon'''
-    if ligne['Valeur_ASMR'] == 'V' and not ligne['premier_de_la_classe'] and ligne['Type'] == 0:
+    if ligne['Valeur_ASMR'] == 'V' and (not ligne['premier_de_la_classe']) and ligne['Type'] == 0:
         return ligne['CIP7']
     else:
         return 0
     
-def nb_groupes_avant(table, ligne):
-    '''Renvoie le nombre de groupes prééxistants dans la classe avant la mise en vente d'un médicament'''
-    code_atc = ligne['CODE_ATC_4']
-    date = ligne['premiere_vente']
+def nb_groupes_avant(table, Id_Groupe):
+    '''Renvoie le nombre de groupes prééxistants dans la classe avant la mise en vente d'un médicament défini par ligne'''
+    code_atc = table.loc[table['Id_Groupe'] == Id_Groupe, 'CODE_ATC_4'].iloc[0]
+    date = table.loc[table['Id_Groupe'] == Id_Groupe, 'premiere_vente'].min()
     table2 = table[table['CODE_ATC_4'] == code_atc]
     selector = table2['premiere_vente'] < date
     nb_groupes = table2.loc[selector, 'Id_Groupe'].nunique()
@@ -123,7 +125,7 @@ def nombre_de_nouveaux_princeps(table_groupe, duree=12, niveau_atc = 4, sel_labo
 def vol_abs_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe):
     date_chute = table_groupe.loc[table_groupe['Type'] != 0, 'premiere_vente'].min()
     if date_chute != 200301:
-        return volume_moyen(table_groupe, date_chute, average_over=12, selection='princeps', proportion = True, somme_classe = somme_classe)
+        return volume_moyen(table_groupe, date_chute, average_over=12, selection='princeps', proportion = proportion, somme_classe = somme_classe)
     else:
         return np.nan
         
@@ -189,14 +191,14 @@ def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, pro
     date_chute = table_groupe.loc[table_groupe['Type'] != 0,'premiere_vente'].min()    
     return var_volume(table_groupe, date_chute, average_over, span, center, proportion, somme_classe)
   
-def volume_entree_princeps_lambda(base_brute, ligne):
+def volume_entree_princeps_lambda(base_brute, Id_Groupe):
     '''Variation de volume de sa classe lors de l'entrée sur le marché du médicament défini par ligne'''
-    date = ligne['premiere_vente']
+    date = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'premiere_vente'].min()
     if not np.isnan(date) and date != 200301:
         string_select = 'CODE_ATC_4'
-        code_atc = ligne[string_select]
+        code_atc = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_select].iloc[0]
         table_classe = base_brute[base_brute[string_select] == code_atc]
-        var_vol = var_volume(table_classe, date, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe)
+        var_vol = var_volume(table_classe, date, average_over=12, span =6, center = 0, proportion = False, somme_classe = somme_classe)
         return var_vol
     else:
         return np.nan
@@ -359,7 +361,7 @@ except:
     #'''Pour chaque groupe : variation relative de prix entre l année précédent la chute et l année suivante'''
     var_prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_chute_brevet(x, average_over = 12, span = 10, selection='ecart_princeps_generique'))
     
-    vol = base_brute.groupby('Id_Groupe').apply(lambda x: volume_moyen(x, average_over=12, selection='princeps', proportion = False))
+    vol = base_brute.groupby('Id_Groupe').apply(lambda x: vol_abs_chute_brevet(x, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe))
     prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_moyen(x, average_over=12, selection='princeps', prix='prix_par_dj'))
     
     taux_rembours = base_brute.groupby('Id_Groupe')['Taux_rembours'].apply(lambda x: x.iloc[0])
@@ -394,9 +396,11 @@ except:
     #plt.show()
     
     '''repérage des me-too'''
-    a = base_brute.groupby('CODE_ATC_4').apply(is_me_too)
-    a = a[a!=0]
-    me_too = [a.iloc[i] for i in range(len(a))]
-    me_toos = base_brute[base_brute['CIP7'].apply(lambda x: x in me_too)] # restriction de base_brute aux me-too
-    var_vol_me_too = me_toos.apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis=1)
-    nombre_princeps = me_toos.apply(lambda x: nb_groupes_avant(base_brute,x), axis = 1)
+a = base_brute.groupby('CODE_ATC_4').apply(is_me_too)
+me_too = a.sum()
+var_vol_me_too = pd.Series([volume_entree_princeps_lambda(base_brute, x) for x in me_too], index = me_too)
+#me_toos = base_brute[base_brute['Id_Groupe'].apply(lambda x: x in me_too)] # restriction de base_brute aux me-too
+#var_vol_me_too = me_toos.apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis=1)
+nombre_princeps = pd.Series([nb_groupes_avant(base_brute, x) for x in me_too], index = me_too)
+
+    
