@@ -25,12 +25,15 @@ def lambda_func(ligne):
     else:
         return 0
     
-def nb_groupes_avant(table, Id_Groupe):
+def nb_groupes(table, Id_Groupe, when = 'avant'):
     '''Renvoie le nombre de groupes prééxistants dans la classe avant la mise en vente d'un médicament défini par ligne'''
     code_atc = table.loc[table['Id_Groupe'] == Id_Groupe, 'CODE_ATC_4'].iloc[0]
     date = table.loc[table['Id_Groupe'] == Id_Groupe, 'premiere_vente'].min()
     table2 = table[table['CODE_ATC_4'] == code_atc]
-    selector = table2['premiere_vente'] < date
+    if when == 'avant':
+        selector = table2['premiere_vente'] < date
+    elif when == 'apres':
+        selector = table2['premiere_vente'] >= date
     nb_groupes = table2.loc[selector, 'Id_Groupe'].nunique()
     return nb_groupes
    
@@ -45,34 +48,44 @@ rank_par_groupe = test.groupby('CODE_ATC_4').rank(ascending = False)
 #
 #is_me_too = index.apply(lambda x: lambda_func(base_brute, x))
     
-### Utilité discutable, ne pas supprimer
-#def cout_classe (code_atc):
-#    '''Calcul la différence de prix si tous les médicaments étaient remboursés au prix du moins cher dans la classe'''
-#    base_classe = base_brute.loc[base_brute['CODE_ATC']==code_atc,:]
-#    prix_min_par_dosage=base_classe[period_prix_par_dosage].apply(lambda column: min(column))
-#    # On considere que tous les médicaments d'ASMR V peuvent être remplacés par un médicament de la même classe (dosage équivalent) moins cher
-#    # On calcule donc la différence de cout pour tous les médicaments d'ASMR V
-#    cout = sum(base_classe.loc[base_classe['Valeur_ASMR']=='V',:].apply(lambda x: dot(x.loc[period_dosage_rembourse],(x[period_prix_par_dosage]-prix_min_par_dosage)),axis=1))
-#    return cout
-#
-#def cout_groupe (id_groupe):
-#    '''Calcul la différence de prix si tous les médicaments étaient remboursés au prix du moins cher dans le groupe'''
-#    base_groupe= base_brute.loc[base_brute['Id_Groupe']==id_groupe,:]
-#    prix_min_par_dosage=base_groupe[period_prix_par_dosage].apply(lambda column: min(column))
-#    # On considere que tous les médicaments d'ASMR V peuvent être remplacés par un médicament de la même classe (dosage équivalent) moins cher
-#    # On calcule donc la différence de cout pour tous les médicaments d'ASMR V
-#    cout = sum(base_groupe.loc[base_groupe['Valeur_ASMR']=='V',:].apply(lambda x: dot(x.loc[period_dosage_rembourse],(x[period_prix_par_dosage]-prix_min_par_dosage)),axis=1))
-#    return cout
-#
-#def dot(a,b):
-#    assert sum(b.isnull())==0
-#    x=a
-#    y=b
-#    x.index = y.index
-#    x_null = x.isnull()
-#    x=x[~x_null]
-#    y=y[~x_null]
-#    return sum(x*y)
+def variabilite(table, what = 'rms'): #Pour répérer les médicaments saisonniers
+    import math
+    season_len = 4  
+    def regularite_lambda(ligne_var):
+        "renvoie la moyenne des std des variabilités pour chaque mois"
+        std_sum = 0
+        for month in range(0, 12):
+            period_month = [period[i] for i in range(0, len(period)) if i%12 == month]
+            std = ligne_var[period_month].std()
+            std_sum += std
+        return std_sum / 12
+
+    '''Somme des écarts absolus à la moyenne annuelle normalisé par rapport au total consomme'''
+    moyenne = moving_average(table[period])
+    table_saison = moving_average(table[period], season_len)
+    difference = table_saison - moyenne
+    variabilite = difference / moyenne
+    if what == 'rms':
+        variabilite = variabilite.applymap(lambda x: x**2).sum(axis=1).apply(math.sqrt)
+        return variabilite
+    elif what == 'std':
+        regularite_de_la_variabilite = variabilite.apply(lambda x: regularite_lambda(x), axis = 1)
+        return regularite_de_la_variabilite
+
+def table_de_variabilite(base_brute, grouper_par = 'Id_Groupe'):
+    '''Renvoie une table avec les champs : var (variabilite : plus c'est grand, plus on varie à la moyenne)
+                                           reg (plus reg est petit, plus on est regulier)
+                                           var_sur_reg (plus c'est grand, plus la probabilité d'être saisonnier est grande)'''
+    
+    print 'attention, ca va etre long...'
+    reg = base_brute.groupby(grouper_par).apply(lambda x: variabilite(x, what = 'std').mean())
+    print 'encore plus long...'
+    var = base_brute.groupby(grouper_par).apply(lambda x: variabilite(x, what = 'rms').mean())
+    test = panda_merge(var, reg)
+    test.columns = ['var', 'reg']
+    test['var_sur_reg'] = test['var']/test['reg']
+    test = test.sort('var_sur_reg').dropna(how = 'any')
+    return test
 
 def plusieurs_labos_par_princeps(table_groupe):
     labos = table_groupe.loc[table_groupe['Type'] == 0, 'LABO']
@@ -187,9 +200,9 @@ def prix_moyen(table_groupe, average_over=12, prix='prix', selection='princeps',
         return np.nan
         
 
-def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe):
+def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, relatif_a_la_classe = False, somme_classe = somme_classe):
     date_chute = table_groupe.loc[table_groupe['Type'] != 0,'premiere_vente'].min()    
-    return var_volume(table_groupe, date_chute, average_over, span, center, proportion, somme_classe)
+    return var_volume(table_groupe, date_chute, average_over, span, center, relatif_a_la_classe, somme_classe)
   
 def volume_entree_princeps_lambda(base_brute, Id_Groupe):
     '''Variation de volume de sa classe lors de l'entrée sur le marché du médicament défini par ligne'''
@@ -198,13 +211,13 @@ def volume_entree_princeps_lambda(base_brute, Id_Groupe):
         string_select = 'CODE_ATC_4'
         code_atc = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_select].iloc[0]
         table_classe = base_brute[base_brute[string_select] == code_atc]
-        var_vol = var_volume(table_classe, date, average_over=12, span =6, center = 0, proportion = False, somme_classe = somme_classe)
+        var_vol = var_volume(table_classe, date, average_over=12, span =6, center = 0, relatif_a_la_classe = False, somme_classe = somme_classe)
         return var_vol
     else:
         return np.nan
 
   
-def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe):
+def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, relatif_a_la_classe = False, somme_classe = somme_classe):
     '''Calcule la variation relative de volume sur un an avant et après la chute de brevet pour le groupe'''
     '''Proportion = True renvoie la variation par rapport au volume de la classe'''
     '''Span : écart additionnel au centre'''
@@ -226,7 +239,7 @@ def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, propor
         somme_avant = table_groupe[period_nb_dj_rembourse].iloc[:, range(chute_moins_a, chute_moins_b)].sum().sum()
         somme_apres = table_groupe[period_nb_dj_rembourse].iloc[:, range(chute_plus_a, chute_plus_b)].sum().sum()
 
-        if proportion:
+        if relatif_a_la_classe:
             code_atc = table_groupe['CODE_ATC'].iloc[0]
 #                diviseur_avant = somme_classe_avant.loc[code_atc, :].iloc[range(chute_moins, chute_moins + average_over)]                
 #                diviseur_apres = somme_apres / somme_classe_apres.loc[code_atc, :].iloc[range(chute_plus - average_over, chute_plus)]               
@@ -356,7 +369,7 @@ try:
     var_vol
 except: 
     '''Pour chaque groupe : variation relative de volume entre l année précédent la chute et l année suivante'''
-    var_vol = base_brute.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 10, proportion = True))
+    var_vol = base_brute.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 10, relatif_a_la_classe = True))
     #var_vol = var_vol[var_vol.apply(lambda x: abs(x))<10] ### On ne garde que les variations 'normales'
     #'''Pour chaque groupe : variation relative de prix entre l année précédent la chute et l année suivante'''
     var_prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_chute_brevet(x, average_over = 12, span = 10, selection='ecart_princeps_generique'))
@@ -398,9 +411,10 @@ except:
     '''repérage des me-too'''
 a = base_brute.groupby('CODE_ATC_4').apply(is_me_too)
 me_too = a.sum()
+# variation du volume de la classe
 var_vol_me_too = pd.Series([volume_entree_princeps_lambda(base_brute, x) for x in me_too], index = me_too)
 #me_toos = base_brute[base_brute['Id_Groupe'].apply(lambda x: x in me_too)] # restriction de base_brute aux me-too
 #var_vol_me_too = me_toos.apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis=1)
-nombre_princeps = pd.Series([nb_groupes_avant(base_brute, x) for x in me_too], index = me_too)
+nombre_princeps = pd.Series([nb_groupes(base_brute, x, when = 'avant') for x in me_too], index = me_too)
 
     
