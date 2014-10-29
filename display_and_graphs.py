@@ -243,7 +243,7 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
     ########### Début : Remplissage automatique des variables 
    
     # On choisit par défaut l'ATC de niveau 4 pour le display
-    string_atc = 'CODE_ATC_4'
+    string_atc = 'CODE_ATC'
 
     if input_val != None:  
         if isinstance(input_val, str):
@@ -381,6 +381,8 @@ def graph_classe(input_val = None, CODE_ATC = None, Id_Groupe = None, color_by =
     if proportion == False and variations == False:
         plt.plot(sum_output, color = 'k', linestyle = '-', linewidth = 2.0, label = 'Total Classe')
     plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=1)
+    ax.set_xticklabels([str(period[i]) for i in range(0, len(period)) if i%12 == 0])
+    ax.set_xticks([i for i in range(0, len(period)) if i%12 == 0])
     plt.show()
     ########### Fin : Visualisation       
     ############################################################################### 
