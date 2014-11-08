@@ -21,17 +21,20 @@ def load_atc_ddd(info_utile):
     tab.columns = info_dispo
     tab = tab.loc[:, info_utile]
     tab = tab[tab['DDD'].notnull()]
-    tab = tab.apply(recode_ligne, axis = 1)
+    tab.loc[tab['UNITE'] == 'mg', 'UNITE'] = 'MG'
+    tab.loc[tab['UNITE'] == ' g', 'DDD'] *= 1000
+    tab.loc[tab['UNITE'] == ' g', 'UNITE'] = 'MG'
+#    tab = tab.apply(recode_ligne, axis=1)
     return tab
 
-def recode_ligne(ligne):
-    if ligne['UNITE'] == 'mg':
-        ligne['UNITE'] = 'MG'
-    elif ligne['UNITE'] == 'g':
-        ligne['UNITE'] = 'MG'
-        ligne['DDD'] *= 1000
-    return ligne
-    
+#def recode_ligne(ligne):
+#    if ligne['UNITE'] == 'mg':
+#        ligne['UNITE'] = 'MG'
+#    elif ligne['UNITE'] == 'g':
+#        ligne['UNITE'] = 'MG'
+#        ligne['DDD'] *= 1000
+#    return ligne
+
 
 if __name__ == '__main__':
     info_utile = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']

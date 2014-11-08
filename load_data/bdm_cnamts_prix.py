@@ -19,7 +19,7 @@ def load_cnamts_prix_harmonise():
         file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
         table = pd.read_csv(file, sep=',')
         #On rend les colonnes compatibles avec 'period'
-        table.columns = ['CIP']+ ['prix_' + x for x in table.columns[1:]]
+        table.columns = ['CIP'] + ['prix_' + x for x in table.columns[1:]]
         return table
     except:
         table = load_cnamts_prix()
@@ -61,4 +61,8 @@ def load_cnamts_prix():
 
     output = output.fillna(method='ffill', axis=1)
     output = output.fillna(method='bfill', axis=1)
+
+#    new_names_cols = ['prix_' + str(x) for x in output.columns]
+#    output.columns = new_names_cols
+    output.reset_index(inplace=True)
     return output

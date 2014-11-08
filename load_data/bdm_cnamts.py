@@ -18,26 +18,13 @@ info_dispo = ['CIP', 'CIP7', 'CIP_UCD', 'NATURE', 'NOM_COURT', 'INDIC_COND',
               'INTERACT', 'PIH', 'PECP']
 
 
-def get_dose(obj):
-    ''' permet d'extraire le nombre d'unités des cellules où il y a un slash,
-    exemple : pour [1/10 ML] renvoie [1] '''
-    obj = str(obj)
-    if '/' in obj:
-        idx = obj.index('/')
-        value = obj[:idx]
-    else:
-        value = obj
-    try:
-        return float(value)
-    except ValueError:
-        return None
 
 def recode_dosage_isfloat(value):
-  try:
-    float(value)
-    return True
-  except ValueError:
-    return False
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
 
 def recode_dosage_sa(table):
     print('dosage ' + str(len(table)))
@@ -58,7 +45,6 @@ def recode_dosage_sa(table):
     table.loc[test_grammes,'DOSAGE_SA'] = table.loc[test_grammes,'DOSAGE_SA'].apply(lambda x: x*1000)
 
     return table
-
 
 
 def recode_nb_unites(table):
@@ -98,6 +84,20 @@ def recode_labo(table):
 
 #def recode_microgrammes_en_mg
 
+def get_dose(obj):
+    ''' permet d'extraire le nombre d'unités des cellules où il y a un slash,
+    exemple : pour [1/10 ML] renvoie [1] '''
+    obj = str(obj)
+    if '/' in obj:
+        idx = obj.index('/')
+        value = obj[:idx]
+    else:
+        value = obj
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
 def bdm_cnamts(info_utiles, unites_par_boite=True):
     ''' charge les info_utiles et crée la variable unites_par_boite '''
     path = os.path.join(path_BDM, "BDM_CIP.xlsx")
@@ -118,3 +118,4 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
 if __name__ == '__main__':
     info_utiles_from_cnamts = ['CIP', 'CIP7', 'CODE_ATC', 'NB_UNITES', 'DOSAGE_SA', 'UNITE_SA','LABO']
     test = bdm_cnamts(info_utiles_from_cnamts)
+
