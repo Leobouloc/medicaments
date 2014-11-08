@@ -5,7 +5,6 @@ Created on Fri Oct 24 16:39:30 2014
 @author: work
 """
 
-import pandas as pd
 import numpy
 
 def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, smooth_avr = 20, xlabel = '', ylabel = '', title = ''):
@@ -35,7 +34,7 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
         test.columns = ['x', 'y', 'z']
         test = test.sort('x')
         test = test[test['y'] != np.inf]
-        plt.scatter(test['x'], test['y'], c = test['z'], s=40, lw = 0.2)
+        plt.scatter(test['x'], test['y'], c = test['z'], s=40, lw = 0.1)
         plt.hot()
         
         if smooth_avr != None:
@@ -73,6 +72,7 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
         plt.show()
    
 def panda_merge(*series):
+    ''' est égal à reduce(series, pd.merge) ? '''
     test = pd.DataFrame(series[0])
     for i in range(1, len(series)):
         test = pd.merge(test, pd.DataFrame(series[i]), left_index = True, right_index = True, how='inner')
