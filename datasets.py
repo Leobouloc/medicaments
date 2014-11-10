@@ -10,7 +10,7 @@ import re
 import numpy as np
 from pandas import read_csv
 
-from config import working_path
+from CONFIG import working_path
 
 import load_data.medic_gouv as mg
 import load_data.bdm_cnamts as cnamts
@@ -46,32 +46,29 @@ def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     table.rename(columns={'nb_Ref_Dosage': 'nb_ref_in_label_medic_gouv'},
                  inplace=True)
     # code ATC de niveau 4
+    table['CODE_ATC'].fillna('inconnu', inplace=True)
     table['CODE_ATC_4'] = table['CODE_ATC'].apply(lambda x: x[:5])
     # dosage_par_prestation_cnamts
     table['dosage_par_prestation_cnamts'] = table['DOSAGE_SA']*table['NB_UNITES']
     # dosage_par_prestation de medic.gouv
     table.loc[table['Dosage'] == 'qs', 'Dosage'] = 0  # Cas particulier
-    pdb.set_trace()
     # TODO: voir si ça marche
-    table['Dosage_num'] = table['Dosage'].str.findall('\d*\.?\d+',str(x)).str.get(1)
-    table['Dosage_num'] = table['Dosage'].str.extract('\d*\.?\d+',str(x))
-    table['Dosage_num'] = table['Dosage'].apply(lambda x: re.findall('\d*\.?\d+',str(x))[0])
+    table['Dosage_num'] = table['Dosage'].str.findall('\d*\.?\d+').str.get(0)
     table['Dosage_num'] = table['Dosage_num'].astype(float)
     table['dosage_par_prestation_medic_gouv'] = table['Dosage_num']*table['nb_ref_in_label_medic_gouv']
     table['dosage_par_prestation_medic_gouv'].replace(0, np.nan, inplace=True)
-
-
-
-
+    return table
 
 def dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
     file = os.path.join(working_path, 'dataset_brut.csv')
     try:
         assert not force
+
         # TODO: check we have dataset_brut.csv was generated with maj_gouv
         table = read_csv(file, sep=',')
         for var in from_gouv + from_cnamts:
-            assert var in table.columns
+            if var != 'CIP':
+                assert var in table.columns
         # On rend les colonnes compatibles avec 'period'
         table.columns = ['CIP'] + ['prix_' + x for x in table.columns[1:]]
         return table
@@ -93,6 +90,8 @@ def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
         return table
     except:
         table = create_dataset_plus(from_gouv, maj_gouv, from_cnamts)
+        import pdb
+        pdb.set_trace()
         table.to_csv(file, sep=',')
         return table
 
@@ -106,4 +105,4 @@ if __name__ == '__main__':
                          'nb_Ref_Dosage', 'Prescription',
                          'premiere_vente', 'derniere_vente']
     info_utiles_from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA', 'UNITE_SA', 'NB_UNITES'] #LABO
-    test = create_dataset_brut(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
+    test = dataset_plus(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
