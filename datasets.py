@@ -20,7 +20,7 @@ from load_data.sniiram import load_sniiram
 maj_gouv = 'maj_20140915122241'
 
 
-def create_dataset_brut(from_gouv, maj_gouv, from_cnamts):
+def create_dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
     # Chargement des donnÃ©es mÃ©dicaments.gouv et cnamts
     print 'Loading medic.gouv'
     gouv = mg.load_medic_gouv(maj_gouv, var_to_keep=from_gouv, CIP_not_null=True)
@@ -30,11 +30,15 @@ def create_dataset_brut(from_gouv, maj_gouv, from_cnamts):
     # Chargement de la base Sniiram
     sniiram = load_sniiram()
     # Chargement des prix dynamiques
-    prix_dynamiques = load_cnamts_prix_harmonise()
+    prix_dynamiques = load_cnamts_prix_harmonise(force)
     # On merge les bases
-    base_brute = gouv.merge(cnam, left_on = 'CIP13', right_on='CIP', how='outer')
-    base_brute = base_brute.merge(sniiram, left_on='CIP13', right_index=True, how='outer')
-    base_brute = base_brute.merge(prix_dynamiques, left_on = 'CIP13', right_on='CIP', how='outer')
+    print len(gouv)
+    base_brute = gouv.merge(cnam, on='CIP', how='outer')
+    print len(base_brute)
+    base_brute = base_brute.merge(sniiram, left_on='CIP', right_index=True, how='outer')
+    print len(base_brute)
+    base_brute = base_brute.merge(prix_dynamiques, on='CIP', how='outer')
+    print len(base_brute)
     # On remplace les nan des periodes par 0
     # J'ai enlevé la ligne ci dessous car je ne vois pas l'intérêt de conserver les lignes si on ne connait pas le dosage
     #base_brute.fillna(0, inplace=True)
@@ -45,12 +49,11 @@ def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     table = dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
     # code ATC de niveau 4
     table['CODE_ATC'].fillna('inconnu', inplace=True)
-    table['CODE_ATC_4'] = table['CODE_ATC'].apply(lambda x: x[:5])
+    table['CODE_ATC_4'] = table['CODE_ATC'].str[:5]
     # dosage_par_prestation_cnamts
     table['dosage_par_prestation_cnamts'] = table['DOSAGE_SA']*table['NB_UNITES']
     # dosage_par_prestation de medic.gouv
     table.loc[table['Dosage'] == 'qs', 'Dosage'] = 0  # Cas particulier
-    # TODO: voir si ça marche
     table['Dosage_num'] = table['Dosage'].str.findall('\d*\.?\d+').str.get(0)
     table['Dosage_num'] = table['Dosage_num'].astype(float)
     table['dosage_par_prestation_medic_gouv'] = table['Dosage_num']*table['nb_ref_in_label_medic_gouv']
@@ -61,17 +64,14 @@ def dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
     file = os.path.join(working_path, 'dataset_brut.csv')
     try:
         assert not force
-
         # TODO: check we have dataset_brut.csv was generated with maj_gouv
         table = read_csv(file, sep=',')
-        for var in from_gouv + from_cnamts:
-            if var != 'CIP':
-                assert var in table.columns
-        # On rend les colonnes compatibles avec 'period'
-        table.columns = ['CIP'] + ['prix_' + x for x in table.columns[1:]]
+        vars_needed = [ x for x in (from_gouv + from_cnamts) if x != 'CIP13']
+        for var in vars_needed:
+            assert var in table.columns
         return table
     except:
-        table = create_dataset_brut(from_gouv, maj_gouv, from_cnamts)
+        table = create_dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
         table.to_csv(file, sep=',')
         return table
 
@@ -81,15 +81,13 @@ def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
         assert not force
         # TODO: check we have dataset_brut.csv was generated with maj_gouv
         table = read_csv(file, sep=',')
-        for var in from_gouv + from_cnamts:
+        vars_needed = [x for x in (from_gouv + from_cnamts) if x != 'CIP13']
+        for var in vars_needed:
             assert var in table.columns
-        # On rend les colonnes compatibles avec 'period'
-        table.columns = ['CIP'] + ['prix_' + x for x in table.columns[1:]]
         return table
     except:
-        table = create_dataset_plus(from_gouv, maj_gouv, from_cnamts)
-        import pdb
-        pdb.set_trace()
+        print('on refait la table dataset_plus')
+        table = create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force)
         table.to_csv(file, sep=',')
         return table
 
@@ -103,4 +101,6 @@ if __name__ == '__main__':
                          'nb_ref_in_label_medic_gouv', 'Prescription',
                          'premiere_vente', 'derniere_vente']
     info_utiles_from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA', 'UNITE_SA', 'NB_UNITES'] #LABO
-    test = dataset_plus(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
+    test = dataset_plus(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts, force=True)
+    import pdb
+    pdb.set_trace()

@@ -410,6 +410,9 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
         output['nb_ref_in_label_medic_gouv'] = table_update(output)
 #    if 'mode_prise' in var_to_keep:
 #        output['mode_prise'] = mode_prise(output)   
+
+    output.rename(columns={'CIP13': 'CIP'}, inplace=True)
+    
     return output
 
 #if __name__ == '__main__':

@@ -14,16 +14,14 @@ from CONFIG import path_BDM
 #[[i,test.iloc[2].loc[~test.iloc[2,:].isnull()].loc[i]] for i in test.iloc[2].loc[~test.iloc[2,:].isnull()].index]
 
 
-def load_cnamts_prix_harmonise():
+def load_cnamts_prix_harmonise(force=False):
+    file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
     try:
-        file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
+        assert not force
         table = pd.read_csv(file, sep=',')
-        #On rend les colonnes compatibles avec 'period'
-        table.columns = ['CIP'] + ['prix_' + x for x in table.columns[1:]]
         return table
     except:
         table = load_cnamts_prix()
-        file = os.path.join(path_BDM, 'BDM_PRIX_harmonise.csv')
         table.to_csv(file, sep=',')
         return table
 
@@ -65,4 +63,6 @@ def load_cnamts_prix():
 #    new_names_cols = ['prix_' + str(x) for x in output.columns]
 #    output.columns = new_names_cols
     output.reset_index(inplace=True)
+    #On rend les colonnes compatibles avec 'period'
+    output.columns = ['CIP'] + ['prix_' + x for x in output.columns[1:]]
     return output
