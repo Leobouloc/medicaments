@@ -110,8 +110,11 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
     if 'LABO' in info_utiles:
         table = recode_labo(table)
     if unites_par_boite:
-        table['unites_par_boite'] = table_entiere['NB_UNITES'].str.replace(',', '.')
-        table['unites_par_boite'] = table['unites_par_boite'].apply(get_dose)
+        table['unites_par_boite_cnamts'] = table_entiere['NB_UNITES'].str.replace(',', '.')
+        table['unites_par_boite_cnamts'] = table['unites_par_boite_cnamts'].apply(get_dose)
+    if 'CODE_ATC' in info_utiles:
+        table['CODE_ATC_4'] = table['CODE_ATC'].apply(lambda x: x[:5])    
+
     return table
 
 

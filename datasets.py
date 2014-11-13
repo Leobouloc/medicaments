@@ -43,8 +43,6 @@ def create_dataset_brut(from_gouv, maj_gouv, from_cnamts):
 
 def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     table = dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
-    table.rename(columns={'nb_Ref_Dosage': 'nb_ref_in_label_medic_gouv'},
-                 inplace=True)
     # code ATC de niveau 4
     table['CODE_ATC'].fillna('inconnu', inplace=True)
     table['CODE_ATC_4'] = table['CODE_ATC'].apply(lambda x: x[:5])
@@ -102,7 +100,7 @@ if __name__ == '__main__':
                          'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                          'indic_droit_rembours', 'Statu_admin_presta',
                          'Ref_Dosage', 'Dosage', 'Label_presta','Valeur_ASMR',
-                         'nb_Ref_Dosage', 'Prescription',
+                         'nb_ref_in_label_medic_gouv', 'Prescription',
                          'premiere_vente', 'derniere_vente']
     info_utiles_from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA', 'UNITE_SA', 'NB_UNITES'] #LABO
     test = dataset_plus(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)

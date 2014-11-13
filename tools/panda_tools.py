@@ -7,8 +7,9 @@ Created on Fri Oct 24 16:39:30 2014
 
 import numpy
 
-def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, smooth_avr = 20, xlabel = '', ylabel = '', title = ''):
-
+def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, return_ma = False, smooth_avr = None, xlabel = '', ylabel = '', title = ''):
+    assert (not return_obj) or (not return_ma)   
+    
     def movingaverage(interval, window_size):
         window= numpy.ones(int(window_size))/float(window_size)
         return numpy.convolve(interval, window, 'same')    
@@ -28,6 +29,8 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
         if smooth_avr != None:
             y_av = movingaverage(test['y'], smooth_avr)
             print y_av
+            if return_ma:
+                return([test['x'], y_av])
             plt.plot(test['x'], y_av, c = "r")
     else:
         test = pd.merge(test, pd.DataFrame(color_serie), left_index = True, right_index = True, how='inner')
@@ -62,6 +65,10 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
     elif describe == 'count':
         obj = test.groupby('0_x').count()
         
+    if return_ma:
+        plt.show()
+        return
+    
     if return_obj:
         plt.show()
         return obj

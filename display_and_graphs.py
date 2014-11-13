@@ -6,6 +6,7 @@ Created on Thu Oct 02 10:12:13 2014
 """
 
 import matplotlib
+import matplotlib.pyplot as plt
 
 colors = [hex for name, hex in matplotlib.colors.cnames.iteritems()]
 colors.remove('#FFE4E1')
