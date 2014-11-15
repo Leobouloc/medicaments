@@ -92,7 +92,7 @@ def info_display(data, input_val=None , name=None ,CIP13=None, Id_Groupe=None, C
     if name is not None:
         disp = data.loc[data['Nom'].str.contains(name, case=False, na=False), vars_display]
     if CIP13 is not None:
-        disp = data.loc[data['CIP13'] == CIP13, vars_display]
+        disp = data.loc[data['CIP'] == CIP13, vars_display]
     if CODE_ATC is not None:
         disp = data.loc[data[string_atc] == CODE_ATC, vars_display]
     if Id_Groupe is not None:
@@ -209,7 +209,7 @@ def graph_prix_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='I
     #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
     for value in set(base_brute.loc[select, color_by]):
         output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dj]
-        output.index = base_brute[select].loc[base_brute.loc[select, color_by] == value, 'CIP13']
+        output.index = base_brute[select].loc[base_brute.loc[select, color_by] == value, 'CIP']
         # output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
         if average:
             output = output.mean()

@@ -36,11 +36,11 @@ def choix_de_la_base(table):
 #    table.loc[prix_nul, 'prix_par_dosage_medic_gouv'] = \
 #    table.loc[prix_nul, 'prix_par_dosage_medic_gouv'].apply(lambda x: np.nan)
 
-    global taille_du_groupe
-    global prix_moyen_par_groupe_medic_gouv
-    global prix_moyen_par_groupe_cnamts
-    global variance_par_groupe_medic_gouv
-    global variance_par_groupe_cnamts
+#    global taille_du_groupe
+#    global prix_moyen_par_groupe_medic_gouv
+#    global prix_moyen_par_groupe_cnamts
+#    global variance_par_groupe_medic_gouv
+#    global variance_par_groupe_cnamts
     grp = table.groupby('group')
     taille_du_groupe = grp.size()
   
