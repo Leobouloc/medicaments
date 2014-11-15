@@ -10,11 +10,9 @@ import matplotlib.pyplot as plt
 
 colors = [hex for name, hex in matplotlib.colors.cnames.iteritems()]
 colors.remove('#FFE4E1')
-#colors =['#002b36', '#073642', '#586e75', '#657b83', '#839496', '#93a1a1', '#eee8d5',
+# colors = ['#002b36', '#073642', '#586e75', '#657b83', '#839496', '#93a1a1', '#eee8d5',
         # '#fdf6e3','#b58900','#cb4b16','#dc322f','#d33682','#6c71c4','#268bd2','#2aa198','#859900']
-
-
-#Montre le nombre de groupes par code substance substance
+# Montre le nombre de groupes par code substance substance
 
 
 def class_count(niveau=4):
@@ -26,6 +24,7 @@ def class_count(niveau=4):
         b = set(base_brute.loc[base_brute[string] == code, 'Id_Groupe'])
         print str(code) + ' --->> ' + str(len(b))
         print b
+
 
 def select(table):
     ''' Permet d'appliquer les conditions (ci dessus) à la table '''
@@ -111,6 +110,7 @@ def info_display(data, input_val=None , name=None ,CIP13=None, Id_Groupe=None, C
             print_role(disp, Type)
     #return disp
 
+
 def moving_average(table, size=12):
     if size == 0:
         return table
@@ -172,7 +172,6 @@ def graph_prix_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='I
     ########### Début : Remplissage automatique des variables
 
     # On choisit par défaut l'ATC de niveau 4 pour le display
-
     if input_val is not None:
         if isinstance(input_val, str):
             if len(input_val) == 5:

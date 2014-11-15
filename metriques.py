@@ -29,12 +29,14 @@ def is_me_too(table_classe):
     later_groups = list(group_start.index[(group_start != class_start) & group_asmr])
     return later_groups
 
+
 def lambda_func(ligne):
     '''renvoie le CIP7 si c'est un me-too, 0 sinon'''
     if ligne['Valeur_ASMR'] == 'V' and (not ligne['premier_de_la_classe']) and ligne['Type'] == 0:
         return ligne['CIP7']
     else:
         return 0
+
 
 def nb_groupes(table, Id_Groupe, when = 'avant'):
     '''Renvoie le nombre de groupes prééxistants dans la classe avant la mise en vente d'un médicament défini par ligne'''
@@ -60,6 +62,7 @@ def nb_groupes(table, Id_Groupe, when = 'avant'):
 #
 #is_me_too = index.apply(lambda x: lambda_func(base_brute, x))
 
+
 def periodogramme(table_group, average_over = 12):
     '''fait les transfo de Fourier, spectre des ventes'''
     print table_group['Id_Groupe'].iloc[0]
@@ -77,6 +80,7 @@ def plot_periodogramme(result, Id_Groupe):
     Pxx_spec = result.loc[Id_Groupe][1]
     plt.plot(f, Pxx_spec)
     plt.show()
+
 
 def variabilite(table, what = 'rms'): #Pour répérer les médicaments saisonniers
     import math
@@ -102,11 +106,11 @@ def variabilite(table, what = 'rms'): #Pour répérer les médicaments saisonnie
         regularite_de_la_variabilite = variabilite.apply(lambda x: regularite_lambda(x), axis = 1)
         return regularite_de_la_variabilite
 
+
 def table_de_variabilite(base_brute, grouper_par = 'Id_Groupe'):
     '''Renvoie une table avec les champs : var (variabilite : plus c'est grand, plus on varie à la moyenne)
                                            reg (plus reg est petit, plus on est regulier)
                                            var_sur_reg (plus c'est grand, plus la probabilité d'être saisonnier est grande)'''
-
     print 'attention, ca va etre long...'
     reg = base_brute.groupby(grouper_par).apply(lambda x: variabilite(x, what = 'std').mean())
     print 'encore plus long...'
@@ -116,6 +120,7 @@ def table_de_variabilite(base_brute, grouper_par = 'Id_Groupe'):
     test['var_sur_reg'] = test['var']/test['reg']
     test = test.sort('var_sur_reg').dropna(how = 'any')
     return test
+
 
 def plusieurs_labos_par_princeps(table_groupe):
     labos = table_groupe.loc[table_groupe['Type'] == 0, 'LABO']
@@ -165,12 +170,14 @@ def nombre_de_nouveaux_princeps(table_groupe, duree=12, niveau_atc = 4, sel_labo
     else:
         return np.nan
 
+
 def vol_abs_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe):
     date_chute = table_groupe.loc[table_groupe['Type'] != 0, 'premiere_vente'].min()
     if date_chute != 200301:
         return volume_moyen(table_groupe, date_chute, average_over=12, selection='princeps', proportion = proportion, somme_classe = somme_classe)
     else:
         return np.nan
+
 
 def volume_moyen(table_groupe, date, average_over=12, selection='princeps', proportion = False, somme_classe = somme_classe):
     '''Renvoie simplement le volume moyen des princeps (avant la chute), ou des génériques (sur toute la période)'''
@@ -201,6 +208,7 @@ def volume_moyen(table_groupe, date, average_over=12, selection='princeps', prop
             return generique
     else:
         return np.nan
+
 
 def prix_moyen(table_groupe, average_over=12, prix='prix', selection='princeps', somme_classe = somme_classe):
     '''Renvoie simplement le prix moyen des princeps (avant la chute), ou des génériques'''
@@ -233,6 +241,7 @@ def prix_moyen(table_groupe, average_over=12, prix='prix', selection='princeps',
 def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, relatif_a_la_classe = False, somme_classe = somme_classe):
     date_chute = table_groupe.loc[table_groupe['Type'] != 0,'premiere_vente'].min()
     return var_volume(table_groupe, date_chute, average_over, span, center, relatif_a_la_classe, somme_classe)
+
 
 def volume_entree_princeps_lambda(base_brute, Id_Groupe):
     '''Variation de volume de sa classe lors de l'entrée sur le marché du médicament défini par ligne'''
@@ -282,12 +291,13 @@ def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, relati
         return variation
     else:
         return np.nan
-
 #test = base_brute[base_brute['Type'] == 0].apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis = 1)
+
 
 def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6):
    date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()
    return var_prix(table_groupe, date_chute, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6)
+
 
 def var_prix(table_groupe, date, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span = 0, center = 0,):
     '''Calcule la variation relative de prix pour un an avant et après la chute de brevet pour le groupe'''
@@ -336,12 +346,14 @@ def var_prix(table_groupe, date, average_over=12, prix = 'prix_par_dj', selectio
     else:
         return np.nan
 
+
 def is_new(table_groupe):
     date = table_groupe['premiere_vente'].min()
     if date == 200301:
         return 'no'
     else:
         return 'yes'
+
 
 def labo_princeps(table_groupe):
     '''Renvoie le labo qui a produit le princeps le plus ancien du groupe'''
@@ -357,8 +369,8 @@ def labo_princeps(table_groupe):
             labo = table_groupe[table_groupe['Type'] == 0].iloc[0]['LABO']
         return labo
 
-def labo_to_int(serie):
 
+def labo_to_int(serie):
     labos = list(set(base_brute['LABO']))
     def function(x):
         if isinstance(x, float):
@@ -366,6 +378,7 @@ def labo_to_int(serie):
         else:
             return labos.index(x)
     return serie.apply(lambda x: function(x))
+
 
 def taux_rembours_float(string):
     if string == '65 %':
