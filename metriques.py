@@ -24,7 +24,7 @@ def is_me_too(table_classe):
 
     ''' renvoie les Id groupes des me-too (sans considération de l'ASMR)'''
     group_start = table_classe.groupby('Id_Groupe')['premiere_vente'].min() # Premiere vente pour chaque groupe la classe
-    group_asmr = table_classe.groupby('Id_Groupe')['Valeur_ASMR'].apply(lambda x : temporaire(x))
+    group_asmr = table_classe.groupby('Id_Groupe')['Valeur_ASMR'].apply(temporaire)
     class_start = group_start.min()
     later_groups = list(group_start.index[(group_start != class_start) & group_asmr])
     return later_groups
@@ -72,7 +72,7 @@ def periodogramme(table_group, average_over = 12):
     f, Pxx_spec = signal.periodogram(test, 1, 'flattop', scaling='spectrum')
     return f, Pxx_spec
 
-#test = base_brute.groupby('Id_Groupe').apply(lambda x: periodogramme(x))
+#test = base_brute.groupby('Id_Groupe').apply(periodogramme
 
 
 def plot_periodogramme(result, Id_Groupe):
@@ -103,7 +103,7 @@ def variabilite(table, what = 'rms'): #Pour répérer les médicaments saisonnie
         variabilite = variabilite.applymap(lambda x: x**2).sum(axis=1).apply(math.sqrt)
         return variabilite
     elif what == 'std':
-        regularite_de_la_variabilite = variabilite.apply(lambda x: regularite_lambda(x), axis = 1)
+        regularite_de_la_variabilite = variabilite.apply(regularite_lambda, axis=1)
         return regularite_de_la_variabilite
 
 
@@ -162,7 +162,7 @@ def nombre_de_nouveaux_princeps(table_groupe, duree=12, niveau_atc = 4, sel_labo
         # On sélectionne les medicaments qui sont mis en vente autour de la chute du brevet
         def temporaire(x):
             return abs(period.index(x) - index_date_chute) <= duree and period.index(x) != 0
-        selector = table['premiere_vente'].apply(lambda x: temporaire(x))
+        selector = table['premiere_vente'].apply(temporaire)
         table = table.loc[selector]
 #        return [len(set(table['Id_Groupe'])), table['Id_Groupe']]
         return len(set(table['Id_Groupe']))
@@ -372,12 +372,12 @@ def labo_princeps(table_groupe):
 
 def labo_to_int(serie):
     labos = list(set(base_brute['LABO']))
-    def function(x):
+    def _function(x):
         if isinstance(x, float):
             return np.nan
         else:
             return labos.index(x)
-    return serie.apply(lambda x: function(x))
+    return serie.apply(_function)
 
 
 def taux_rembours_float(string):
