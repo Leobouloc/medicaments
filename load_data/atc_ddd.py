@@ -22,20 +22,21 @@ def load_atc_ddd(info_utile):
     tab = tab.loc[:, info_utile]
     tab = tab[tab['DDD'].notnull()]
     tab.loc[tab['UNITE'] == 'mg', 'UNITE'] = 'MG'
-    tab.loc[tab['UNITE'] == ' g', 'DDD'] *= 1000
-    tab.loc[tab['UNITE'] == ' g', 'UNITE'] = 'MG'
+    tab.loc[tab['UNITE'] == 'g', 'DDD'] *= 1000
+    tab.loc[tab['UNITE'] == 'g', 'UNITE'] = 'MG'
+    tab.loc[tab['UNITE'] == 'mcg', 'DDD'] /= 1000
+    tab.loc[tab['UNITE'] == 'mcg', 'UNITE'] = 'MG'
 #    tab = tab.apply(recode_ligne, axis=1)
+    # TODO: comprendre pourquoi on a plusieurs éléments parfois
+    prob = tab.groupby(['CODE_ATC', 'MODE', 'UNITE']).filter(lambda x: len(x) > 1)
+    tab = tab.groupby(['CODE_ATC', 'MODE', 'UNITE']).mean().reset_index()
+    assert tab.groupby(['CODE_ATC', 'MODE', 'UNITE']).size().max() == 1
+    # TODO: comprendre pourquoi, on a plusieurs unité
+    prob = tab.groupby(['CODE_ATC', 'MODE']).filter(lambda x: len(x) > 1)
+    assert tab.groupby(['CODE_ATC', 'MODE']).size().max() == 1
     return tab
-
-#def recode_ligne(ligne):
-#    if ligne['UNITE'] == 'mg':
-#        ligne['UNITE'] = 'MG'
-#    elif ligne['UNITE'] == 'g':
-#        ligne['UNITE'] = 'MG'
-#        ligne['DDD'] *= 1000
-#    return ligne
-
 
 if __name__ == '__main__':
     info_utile = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
     test = load_atc_ddd(info_utile)
+    
