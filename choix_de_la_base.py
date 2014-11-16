@@ -62,7 +62,6 @@ def choix_de_la_base(table, group_name):
         if i % 100 == 0:
             print str(float(i) / float(len(set(table[group_name])))) + '%'
         i = i + 1
-        print group
         # Dans le cas où les valeurs de prix pour tout le groupe dans les deux base
         base_cnamts = prix_moyen_par_groupe['cnamts'][group]
         base_medic = prix_moyen_par_groupe['medic_gouv'][group]
