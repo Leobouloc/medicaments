@@ -21,36 +21,25 @@ maj_gouv = 'maj_20140915122241'
 from datasets import dataset_brut
 
 
-def calcul_ddd_cnamts_ligne(ligne, atc_ddd):
-    '''Calcul de la ddd pour les medicaments qu'on a pris de la cnamts'''
-    code_atc = ligne['CODE_ATC']
-    selector = atc_ddd['CODE_ATC'] == str(code_atc)
-    atc_ddd_restreint = atc_ddd.loc[selector, :]
-    nunique_code_atc = sum(selector)
-    '''On vérifie que le dosage est bien au format nombre unité'''
-    dosage = ligne['DOSAGE_SA']
-    unite = str(ligne['UNITE_SA'])
-    nb_unites = ligne['NB_UNITES']
-    return calcul_ddd(ligne, atc_ddd_restreint, code_atc, dosage, unite, nb_unites, nunique_code_atc)
-
-
-def calcul_ddd_medic_gouv_substance_unique_ligne(ligne, atc_ddd):
+def calcul_ddd_ligne(ligne, atc_ddd, base_source):
     '''Calcul de la ddd pour les medicaments qu'on a pris de medic_gouv'''
     code_atc = ligne['CODE_ATC']
     selector = atc_ddd['CODE_ATC'] == str(code_atc)
     atc_ddd_restreint = atc_ddd.loc[selector, :]
     nunique_code_atc = sum(selector)
     '''On vérifie que le dosage est bien au format nombre unité'''
-    dosage_list = ligne['Dosage'].split()
-    dosage = float(dosage_list[0])
-    unite = dosage_list[1]
-    nb_unites = ligne['nb_ref_in_label_medic_gouv']
-
-    if len(dosage_list) != 2:
-        return np.nan
-    else:
-        
-        return calcul_ddd(ligne, atc_ddd_restreint, code_atc, dosage, unite, nb_unites, nunique_code_atc)
+    if base_source == 'cnamts':
+        dosage = ligne['DOSAGE_SA']
+        unite = str(ligne['UNITE_SA'])
+        nb_unites = ligne['NB_UNITES']        
+    if base_source == 'medic_gouv':
+        dosage_list = ligne['Dosage'].split()
+        dosage = float(dosage_list[0])
+        unite = dosage_list[1]
+        nb_unites = ligne['nb_ref_in_label_medic_gouv']
+        if len(dosage_list) != 2:
+            return np.nan
+    return calcul_ddd(ligne, atc_ddd_restreint, code_atc, dosage, unite, nb_unites, nunique_code_atc)
 
 
 def calcul_ddd(ligne, atc_ddd_restreint, code_atc, dosage, unite, nb_unites, nunique_code_atc):
@@ -86,14 +75,13 @@ def calcul_dj_par_presta(table, atc_ddd):
         table['dj_par_presta'] = pd.Series()
     # Calcul de la dj par presta pour les medicaments du cnamts
     from_cnamts = table['base_choisie'] == 'cnamts'
-    
-    table.loc[from_cnamts, 'dj_par_presta'] = table.loc[from_cnamts, :].apply(lambda ligne: calcul_ddd_cnamts_ligne(ligne, atc_ddd), axis=1)
-    
+    table.loc[from_cnamts, 'dj_par_presta'] = table.loc[from_cnamts, :].apply(lambda ligne: calcul_ddd_ligne(ligne, atc_ddd, 'cnamts'), axis=1)
     # Calcul de la dj par presta pour les medicaments de medic gouv avec une seule substance
     cip_uniques = table.groupby('CIP7')['Code_Substance'].nunique() == 1
     selector = table.apply(lambda x: cip_uniques[x['CIP7']] and x['base_choisie'] == 'medic_gouv', axis=1)
-    table.loc[selector, 'dj_par_presta'] = table[selector].apply(lambda ligne: calcul_ddd_medic_gouv_substance_unique_ligne(ligne, atc_ddd), axis=1)
+    table.loc[selector, 'dj_par_presta'] = table[selector].apply(lambda ligne: calcul_ddd_ligne(ligne, atc_ddd, 'medic_gouv'), axis=1)
     return table
+
 
 def create_dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
     table = dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
