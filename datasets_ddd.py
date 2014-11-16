@@ -39,10 +39,7 @@ def calcul_ddd_ligne(ligne, atc_ddd, base_source):
         nb_unites = ligne['nb_ref_in_label_medic_gouv']
         if len(dosage_list) != 2:
             return np.nan
-    return calcul_ddd(ligne, atc_ddd_restreint, code_atc, dosage, unite, nb_unites, nunique_code_atc)
 
-
-def calcul_ddd(ligne, atc_ddd_restreint, code_atc, dosage, unite, nb_unites, nunique_code_atc):
     list_O = ['compr', 'lule', 'capsule', 'flacon']
     list_P = ['seringue']
 
@@ -52,7 +49,7 @@ def calcul_ddd(ligne, atc_ddd_restreint, code_atc, dosage, unite, nb_unites, nun
         if unite.upper() == str(atc_ddd_restreint['UNITE'].iloc[0]):
             nb_dj_par_prestation = dosage*nb_unites / atc_ddd_restreint['DDD'].iloc[0]
             return nb_dj_par_prestation
-        
+
     if nunique_code_atc == 2 and atc_ddd_restreint['MODE'].nunique() == 2:
         if any([x in ligne['Label_presta'] for x in list_O]) and 'O' in list(atc_ddd_restreint['MODE'].apply(str)):
             diviseur = atc_ddd_restreint.loc[atc_ddd_restreint['MODE'] == 'O', 'DDD'].iloc[0]
