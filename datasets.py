@@ -32,13 +32,9 @@ def create_dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
     # Chargement des prix dynamiques
     prix_dynamiques = load_cnamts_prix_harmonise(force)
     # On merge les bases
-    print len(gouv)
     base_brute = gouv.merge(cnam, on='CIP', how='outer')
-    print len(base_brute)
     base_brute = base_brute.merge(sniiram, left_on='CIP', right_index=True, how='outer')
-    print len(base_brute)
     base_brute = base_brute.merge(prix_dynamiques, on='CIP', how='outer')
-    print len(base_brute)
     # On remplace les nan des periodes par 0
     # J'ai enlevé la ligne ci dessous car je ne vois pas l'intérêt de conserver les lignes si on ne connait pas le dosage
     #base_brute.fillna(0, inplace=True)

@@ -8,7 +8,6 @@ import re
 import numpy as np
 import pandas as pd
 
-import pdb
 
 def calcul_dosage_par_prestation_test(table):
     '''Renvoie le dosage par prestation estimé pour les deux bases cnamts et medic_gouv'''
@@ -24,7 +23,7 @@ def calcul_dosage_par_prestation_test(table):
     return table
 
 
-def choix_de_la_base(table):
+def choix_de_la_base(table, group_name):
     '''Indique s'il faut conserver les valeurs du cnamts ou de médic. gouv pour chaque médicament
     Le choix est fait de telle sorte à minimiser la variance de prix au sein d un groupe'''
 
@@ -41,7 +40,7 @@ def choix_de_la_base(table):
 #    global prix_moyen_par_groupe_cnamts
 #    global variance_par_groupe_medic_gouv
 #    global variance_par_groupe_cnamts
-    grp = table.groupby('group')
+    grp = table.groupby(group_name)
     taille_du_groupe = grp.size()
   
     date = 201406  # TODO: prendre la dernière date plus joliement  
@@ -53,33 +52,38 @@ def choix_de_la_base(table):
         table['prix_par_dosage_' + dosage_name] = table[string]/table['dosage_par_prestation_' + dosage_name]
         prix_moyen_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].sum().div(taille_du_groupe)
         #.apply(lambda x: x*x) #Il s'agit en fait du carré
-        prix_var_norm_par_groupe[dosage_name] = table.groupby('group')['prix_par_dosage_' + dosage_name].std().div(prix_moyen_par_groupe[dosage_name])
+        prix_var_norm_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].std().div(prix_moyen_par_groupe[dosage_name])
         # On conserve les prix dans la même base si on a tous les prix d'un groupe
         prix_moyen_par_groupe[dosage_name] = prix_moyen_par_groupe[dosage_name].notnull()
 
     #Pour chaque groupe
     i = 0
-    for group in set(table['group']):
+    for group in set(table[group_name]):
         if i % 100 == 0:
-            print str(float(i) / float(len(set(table['group'])))) + '%'
+            print str(float(i) / float(len(set(table[group_name])))) + '%'
         i = i + 1
+        print group
         # Dans le cas où les valeurs de prix pour tout le groupe dans les deux base
-        if prix_moyen_par_groupe['cnamts'][group] and prix_moyen_par_groupe['medic_gouv'][group]:
+        base_cnamts = prix_moyen_par_groupe['cnamts'][group]
+        base_medic = prix_moyen_par_groupe['medic_gouv'][group]
+        if base_cnamts and base_medic:
             # On garde le groupe avec la variance normalisée la plus faible
             if prix_var_norm_par_groupe['medic_gouv'][group] < prix_var_norm_par_groupe['cnamts'][group]:
-                table.loc[table['group'] == group, 'base_choisie'] = 'medic_gouv'
+                table.loc[table[group_name] == group, 'base_choisie'] = 'medic_gouv'
             else:
-                table.loc[table['group'] == group, 'base_choisie'] = 'cnamts'
-        elif prix_var_norm_par_groupe['medic_gouv'][group]:
-            table.loc[table['group'] == group, 'base_choisie'] = 'medic_gouv'
-        elif prix_var_norm_par_groupe['cnamts'][group]:
-            table.loc[table['group'] == group, 'base_choisie'] = 'cnamts'
+                table.loc[table[group_name] == group, 'base_choisie'] = 'cnamts'
+        elif base_medic:
+            table.loc[table[group_name] == group, 'base_choisie'] = 'medic_gouv'
+        elif base_cnamts > 0:
+            table.loc[table[group_name] == group, 'base_choisie'] = 'cnamts'
         else:
+            # TODO: 
+            table.loc[table[group_name] == group, 'base_choisie'] = 'inconnu'
             # Enfin, si on a deux valeurs différentes, on calcule le prix relativement à la moyenne du groupe.
             # Le prix "moyen" est en réalité la somme des prix mais ca n'a pas de conséquences
-            table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda1, axis=1)
-            # print('f')
-            table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda2, axis=1)
+#                 table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda1, axis=1)
+#                 # print('f')
+#                 table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda2, axis=1)
     return table
 
 
@@ -101,11 +105,11 @@ def choix_de_la_base_lambda1(ligne):
 def choix_de_la_base_lambda2(ligne):
     # On choisit la base qui donne un ratio le plus petit possible (équivalent écart à la moyenne)
     # print (prix_moyen_par_groupe_medic_gouv[ligne['Id_Groupe']])
-    # if taille_du_groupe[ligne['group']] <=2:
+    # if taille_du_groupe[ligne[group_name]] <=2:
     #    ligne['base_choisie'] = 'medic_gouv'
 
-    ratio_medic_gouv = ligne['prix_par_dosage_medic_gouv'] / float(prix_moyen_par_groupe['medic_gouv'][ligne['group']])
-    ratio_cnamts = ligne['prix_par_dosage_cnamts'] / float(prix_moyen_par_groupe['cnamts'][ligne['group']])
+    ratio_medic_gouv = ligne['prix_par_dosage_medic_gouv'] / float(prix_moyen_par_groupe['medic_gouv'][ligne[group_name]])
+    ratio_cnamts = ligne['prix_par_dosage_cnamts'] / float(prix_moyen_par_groupe['cnamts'][ligne[group_name]])
     if ratio_medic_gouv < 1:
         ratio_medic_gouv = float(1) / ratio_medic_gouv
     if ratio_cnamts < 1:
