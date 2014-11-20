@@ -6,6 +6,8 @@ Created on Fri Oct 24 16:39:30 2014
 """
 
 import numpy
+import numpy as np
+import matplotlib.pyplot as plt
 
 def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, return_ma = False, smooth_avr = None, xlabel = '', ylabel = '', title = ''):
     assert (not return_obj) or (not return_ma)   
@@ -24,20 +26,20 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
         test.columns = ['x', 'y']
         test = test.sort('x')
         test = test[test['y'] != np.inf]
-        plt.scatter(test['x'], test['y'])
+        plt.scatter(test['x'], test['y'], alpha = 0.1)
         
         if smooth_avr != None:
             y_av = movingaverage(test['y'], smooth_avr)
-            print y_av
-            if return_ma:
-                return([test['x'], y_av])
+#            print y_av
+#            if return_ma:
+#                return([test['x'], y_av])
             plt.plot(test['x'], y_av, c = "r")
     else:
         test = pd.merge(test, pd.DataFrame(color_serie), left_index = True, right_index = True, how='inner')
         test.columns = ['x', 'y', 'z']
         test = test.sort('x')
         test = test[test['y'] != np.inf]
-        plt.scatter(test['x'], test['y'], c = test['z'], s=40, lw = 0.1)
+        plt.scatter(test['x'], test['y'], c = test['z'], s=40, lw = 0.1, alpha = 0.1)
         plt.hot()
         
         if smooth_avr != None:
@@ -45,17 +47,17 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
             plt.plot(test['x'], y_av,"r")      
             
             
-            max_range = test['x'].max()
-            step = max_range / smooth_avr
-            x_curve = [step/2 + step * i for i in range(smooth_avr)]
-            y_curve = [avr_in_window(x, step, test) for x in x_curve]
-            plt.plot(x_curve, y_curve, "g") 
+#            max_range = test['x'].max()
+#            step = max_range / smooth_avr
+#            x_curve = [step/2 + step * i for i in range(smooth_avr)]
+#            y_curve = [avr_in_window(x, step, test) for x in x_curve]
+#            plt.plot(x_curve, y_curve, "g") 
     
 
-    plt.xlabel(xlabel)    
-    plt.ylabel(ylabel)
-    plt.title(title)
-        
+#    plt.xlabel(xlabel)    
+#    plt.ylabel(ylabel)
+#    plt.title(title)
+#        
     if describe == 'describe':
         obj = test.groupby('0_x').describe()
     elif describe == 'mean':

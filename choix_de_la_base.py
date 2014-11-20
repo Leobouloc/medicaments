@@ -23,7 +23,7 @@ def calcul_dosage_par_prestation_test(table):
     return table
 
 
-def choix_de_la_base(table, group_name):
+def choix_de_la_base(table):
     '''Indique s'il faut conserver les valeurs du cnamts ou de médic. gouv pour chaque médicament
     Le choix est fait de telle sorte à minimiser la variance de prix au sein d un groupe'''
 
@@ -40,6 +40,7 @@ def choix_de_la_base(table, group_name):
 #    global prix_moyen_par_groupe_cnamts
 #    global variance_par_groupe_medic_gouv
 #    global variance_par_groupe_cnamts
+    group_name = 'Id_Groupe'
     grp = table.groupby(group_name)
     taille_du_groupe = grp.size()
   
