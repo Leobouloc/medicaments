@@ -7,6 +7,7 @@ Created on Fri Aug 08 15:30:38 2014
 import pandas as pd
 import re
 import os
+import numpy as np
 from CONFIG import path_BDM
 
 info_dispo = ['CIP', 'CIP7', 'CIP_UCD', 'NATURE', 'NOM_COURT', 'INDIC_COND',
@@ -25,6 +26,12 @@ def recode_dosage_isfloat(value):
         return True
     except ValueError:
         return False
+        
+def recode_dosage_as_float(value):
+    try:
+        return float(value)
+    except:
+        return np.nan
 
 def recode_dosage_sa(table):
     print('dosage ' + str(len(table)))
@@ -32,9 +39,9 @@ def recode_dosage_sa(table):
     #table = table.loc[table['DOSAGE_SA'].apply(lambda x: x!='NON RENSEIGNE' and x!='NON RENSIGNE' and x!='NON RE' and x!='NR')]
     #Supprimer toutes les listes avec du texte
     table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace(',','.')
-    table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
-    table = table.loc[table['DOSAGE_SA'].notnull(), :]
-    table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(lambda x: float(x))
+#    table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
+#    table = table.loc[table['DOSAGE_SA'].notnull(), :]
+    table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(recode_dosage_as_float)
 
     test_mui = table['UNITE_SA'].str.contains('MUI', na=False)
     table.loc[test_mui,'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('MUI', 'UI')
@@ -50,12 +57,12 @@ def recode_dosage_sa(table):
 def recode_nb_unites(table):
     #print('nb_unites ' + str(len(table)))
     ''' recode les objets avec des slashs : 2/150 ---> 2'''
-    table = table.loc[~table['NB_UNITES'].isnull(), :].copy()
-    table['NB_UNITES'] = table['NB_UNITES'].str.replace(',','.')
-    table['NB_UNITES'] = table['NB_UNITES'].str.replace(' M','000000')
-    table['NB_UNITES'] = table['NB_UNITES'].str.split('/').apply(lambda x: recode_nb_unites_split_func(x))
-    table['NB_UNITES'] = table['NB_UNITES'].apply(lambda x: re.findall('\d*\.?\d+',str(x))[0])
-    table['NB_UNITES'] = table['NB_UNITES'].astype(float)
+    selector = table['NB_UNITES'].notnull()
+    table.loc[selector, 'NB_UNITES'] = table.loc[selector, 'NB_UNITES'].str.replace(',','.')
+    table.loc[selector, 'NB_UNITES'] = table.loc[selector, 'NB_UNITES'].str.replace(' M','000000')
+    table.loc[selector, 'NB_UNITES'] = table.loc[selector, 'NB_UNITES'].str.split('/').apply(lambda x: recode_nb_unites_split_func(x))
+    table.loc[selector, 'NB_UNITES'] = table.loc[selector, 'NB_UNITES'].apply(lambda x: re.findall('\d*\.?\d+',str(x))[0])
+    table.loc[selector, 'NB_UNITES'] = table.loc[selector, 'NB_UNITES'].astype(float)
     return table
 
 def recode_nb_unites_split_func(x):
@@ -98,6 +105,12 @@ def get_dose(obj):
     except ValueError:
         return None
 
+def atc_4_lambda(x):
+    try:
+        return x[:5]
+    except:
+        return np.nan
+
 def bdm_cnamts(info_utiles, unites_par_boite=True):
     ''' charge les info_utiles et crée la variable unites_par_boite '''
     path = os.path.join(path_BDM, "BDM_CIP.xlsx")
@@ -113,7 +126,7 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
         table['unites_par_boite_cnamts'] = table_entiere['NB_UNITES'].str.replace(',', '.')
         table['unites_par_boite_cnamts'] = table['unites_par_boite_cnamts'].apply(get_dose)
     if 'CODE_ATC' in info_utiles:
-        table['CODE_ATC_4'] = table['CODE_ATC'].apply(lambda x: x[:5])    
+        table['CODE_ATC_4'] = table['CODE_ATC'].apply(atc_4_lambda)    
 
     return table
 
