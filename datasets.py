@@ -10,7 +10,7 @@ import re
 import numpy as np
 from pandas import read_csv
 
-from load_data.CONFIG import working_path
+from CONFIG import working_path
 
 import load_data.medic_gouv as mg
 import load_data.bdm_cnamts as cnamts
