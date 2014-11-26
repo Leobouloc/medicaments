@@ -22,6 +22,11 @@ def calcul_dosage_par_prestation_test(table):
     table['dosage_par_prestation_cnamts'] = table['DOSAGE_SA']*table['NB_UNITES']
     return table
 
+def new_std(x):
+    try:
+        return x.std()
+    except:
+        return np.nan
 
 def choix_de_la_base(table):
     '''Indique s'il faut conserver les valeurs du cnamts ou de médic. gouv pour chaque médicament
@@ -29,7 +34,7 @@ def choix_de_la_base(table):
 
     print 'actuellement dans choix_de_la_base'
     table = calcul_dosage_par_prestation_test(table)
-    table['base_choisie'] = 'inconnu'
+    table['base_choisie'] = np.nan
 
 #    prix_nul = table['prix_par_dosage_medic_gouv'] == 0
 #    table.loc[prix_nul, 'prix_par_dosage_medic_gouv'] = \
@@ -43,6 +48,8 @@ def choix_de_la_base(table):
     group_name = 'Id_Groupe'
     grp = table.groupby(group_name)
     taille_du_groupe = grp.size()
+   
+    # TODO : prendre le plus complêt des deux
   
     date = 201406  # TODO: prendre la dernière date plus joliement  
     string = 'prix_' + str(date)
@@ -51,10 +58,17 @@ def choix_de_la_base(table):
     prix_var_norm_par_groupe = dict()
     grp_list = dict()
     for dosage_name in ['cnamts', 'medic_gouv']:
-        table['prix_par_dosage_' + dosage_name] = table[string]/table['dosage_par_prestation_' + dosage_name]
+        
+        selector = table['dosage_par_prestation_' + dosage_name].notnull() & (table['dosage_par_prestation_' + dosage_name] != 0)
+
+        taille_du_groupe = grp['dosage_par_prestation_' + dosage_name].apply(lambda x: x.notnull().sum())
+
+        table['prix_par_dosage_' + dosage_name] = np.nan
+        table.loc[selector, 'prix_par_dosage_' + dosage_name] = table.loc[selector, string] / table.loc[selector, 'dosage_par_prestation_' + dosage_name]
         prix_moyen_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].sum().div(taille_du_groupe)
         #.apply(lambda x: x*x) #Il s'agit en fait du carré
-        prix_var_norm_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].std().div(prix_moyen_par_groupe[dosage_name])
+#        selector_grp = grp.apply(lambda x: any(x.notnull())) ### select groups that are not all nan
+        prix_var_norm_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].apply(new_std).div(prix_moyen_par_groupe[dosage_name])
         # On conserve les prix dans la même base si on a tous les prix d'un groupe
         prix_moyen_par_groupe[dosage_name] = prix_moyen_par_groupe[dosage_name].notnull()
         grp_list[dosage_name] = set(prix_moyen_par_groupe[dosage_name].index)
@@ -63,7 +77,6 @@ def choix_de_la_base(table):
     assert len(diff) == 0
     
     var_inf_in_medic = prix_var_norm_par_groupe['medic_gouv'] < prix_var_norm_par_groupe['cnamts']
-    var_inf_in_medic[var_inf_in_medic]
     
     # on fera les autres cas (présence dans une seule base) 
     # si on a des groupes dans une base et pas dans l'autre.
@@ -76,14 +89,14 @@ def choix_de_la_base(table):
     table['test'] = table['Id_Groupe'].isnull()
     table.groupby(['test', 'base_choisie']).size()
     
-    todo = table['base_choisie'] == 'inconnu'
+    todo = table['base_choisie'].isnull()
     medic = table['prix_par_dosage_medic_gouv'].notnull()
     cnam = table['prix_par_dosage_cnamts'].notnull()
     table.loc[medic & todo, 'base_choisie'] = 'medic_gouv'
-    todo = table['base_choisie'] == 'inconnu'
+    todo = table['base_choisie'].isnull()
     table.loc[cnam & todo, 'base_choisie'] = 'medic_gouv'
     
-    todo = table['base_choisie'] == 'inconnu'
+    todo = table['base_choisie'].isnull()
     print(str(todo.sum()) + " lignes n'ont pas de dosage")
 
 #     i = 0

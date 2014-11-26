@@ -19,6 +19,7 @@ from load_data.atc_ddd import load_atc_ddd
 maj_gouv = 'maj_20140915122241'
 
 from datasets import dataset_brut
+from datasets import dataset_plus
 
 
 def calcul_ddd_ligne(ligne, atc_ddd, base_source):
@@ -26,6 +27,10 @@ def calcul_ddd_ligne(ligne, atc_ddd, base_source):
     code_atc = ligne['CODE_ATC']
     selector = atc_ddd['CODE_ATC'] == str(code_atc)
     atc_ddd_restreint = atc_ddd.loc[selector, :]
+    
+    if len(atc_ddd_restreint) == 0:
+        return np.nan
+    
     nunique_code_atc = sum(selector)
     '''On vérifie que le dosage est bien au format nombre unité'''
     if base_source == 'cnamts':
@@ -33,8 +38,11 @@ def calcul_ddd_ligne(ligne, atc_ddd, base_source):
         unite = str(ligne['UNITE_SA'])
         nb_unites = ligne['NB_UNITES']        
     if base_source == 'medic_gouv':
-        dosage_list = ligne['Dosage'].split()
-        dosage = float(dosage_list[0])
+        try: # avoid
+            dosage_list = ligne['Dosage'].split()
+            dosage = float(dosage_list[0])
+        except:
+            return np.nan
         unite = dosage_list[1]
         nb_unites = ligne['nb_ref_in_label_medic_gouv']
         if len(dosage_list) != 2:
@@ -59,7 +67,7 @@ def calcul_ddd_ligne(ligne, atc_ddd, base_source):
 
         if any([x in ligne['Label_presta'] for x in list_P]) and 'P' in list(atc_ddd_restreint['MODE'].apply(str)):
             diviseur = atc_ddd_restreint.loc[atc_ddd_restreint['MODE'] == 'P', 'DDD'].iloc[0]
-            if unite.upper() == str(atc_ddd_restreint.loc[list(atc_ddd_restreint['MODE'] == 'O'), 'UNITE'].iloc[0]):
+            if unite.upper() == str(atc_ddd_restreint.loc[list(atc_ddd_restreint['MODE'] == 'P'), 'UNITE'].iloc[0]): # check replace P for 0 ?
                 nb_dj_par_prestation = dosage*nb_unites / diviseur
                 return nb_dj_par_prestation
     return np.nan
@@ -75,7 +83,14 @@ def calcul_dj_par_presta(table, atc_ddd):
     table.loc[from_cnamts, 'dj_par_presta'] = table.loc[from_cnamts, :].apply(lambda ligne: calcul_ddd_ligne(ligne, atc_ddd, 'cnamts'), axis=1)
     # Calcul de la dj par presta pour les medicaments de medic gouv avec une seule substance
     cip_uniques = table.groupby('CIP7')['Code_Substance'].nunique() == 1
-    selector = table.apply(lambda x: cip_uniques[x['CIP7']] and x['base_choisie'] == 'medic_gouv', axis=1)
+    print cip_uniques
+    print table['CIP7']
+    print table['base_choisie']
+    sel1 = table.apply(lambda ligne: (ligne['base_choisie'] == 'medic_gouv'), axis=1)
+    sel2 = table.apply(lambda ligne: cip_uniques[ligne['CIP7']] , axis=1)
+    sel2 = sel2.apply(lambda x: str(x).replace('[]', 'False')).apply(bool)
+    selector = sel1 & sel2
+#    selector = table.apply(lambda ligne: cip_uniques[ligne['CIP7']] and (ligne['base_choisie'] == 'medic_gouv'), axis=1)
     table.loc[selector, 'dj_par_presta'] = table[selector].apply(lambda ligne: calcul_ddd_ligne(ligne, atc_ddd, 'medic_gouv'), axis=1)
     return table
 

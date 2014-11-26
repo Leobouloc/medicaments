@@ -57,7 +57,13 @@ def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     
     # Moved from exploitation_sniiram
     table['role'] = table['Type'] == 0 # True pour le princeps et False pour le générique
-    table.loc[:, 'Id_Groupe'] = table.loc[:, 'Id_Groupe'].astype(int)
+    def Id_Groupe_int(x):
+        try:
+            return int(x)
+        except:
+            return np.nan
+            
+    table.loc[:, 'Id_Groupe'] = table.loc[:, 'Id_Groupe'].apply(Id_Groupe_int)
     table.loc[:, 'role'] = table.loc[:, 'role'].astype(bool) #pour faire planter si on a trois groupes...
     return table
 

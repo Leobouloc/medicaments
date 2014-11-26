@@ -250,7 +250,7 @@ def _auto_fill_var(input_val):
     raise Exception('input val is unidentified')
 
 
-def graph_volume_classe(input_val=None, base_brute, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe',
+def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe',
                         make_sum=False, proportion=False, average_over=12,
                         variations=False, display='cout', write_on=True):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
