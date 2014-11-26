@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from pandas import read_csv
 
-from load_data.CONFIG import working_path
+from CONFIG import working_path
 
 from choix_de_la_base import choix_de_la_base
 from load_data.atc_ddd import load_atc_ddd
@@ -84,7 +84,7 @@ def create_dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
     table = dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
     ddd = load_atc_ddd(from_ddd)
     print (' avant séléction par Id_Groupe :' + str(len(table)))
-    table = table.loc[table['Id_Groupe'].notnull(), :]
+#     table = table.loc[table['Id_Groupe'].notnull(), :]
     print (' après séléction par Id_Groupe :' + str(len(table)))
     table = choix_de_la_base(table)
     print (' après choix de la base :' + str(len(table)))
@@ -122,5 +122,5 @@ if __name__ == '__main__':
     info_utiles_from_atc_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
 
     
-    test = dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
+#    test = dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
     test2 = create_dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)

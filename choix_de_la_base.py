@@ -29,7 +29,7 @@ def choix_de_la_base(table):
 
     print 'actuellement dans choix_de_la_base'
     table = calcul_dosage_par_prestation_test(table)
-    table['base_choisie'] = pd.Series()
+    table['base_choisie'] = 'inconnu'
 
 #    prix_nul = table['prix_par_dosage_medic_gouv'] == 0
 #    table.loc[prix_nul, 'prix_par_dosage_medic_gouv'] = \
@@ -49,6 +49,7 @@ def choix_de_la_base(table):
     
     prix_moyen_par_groupe = dict()
     prix_var_norm_par_groupe = dict()
+    grp_list = dict()
     for dosage_name in ['cnamts', 'medic_gouv']:
         table['prix_par_dosage_' + dosage_name] = table[string]/table['dosage_par_prestation_' + dosage_name]
         prix_moyen_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].sum().div(taille_du_groupe)
@@ -56,34 +57,62 @@ def choix_de_la_base(table):
         prix_var_norm_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].std().div(prix_moyen_par_groupe[dosage_name])
         # On conserve les prix dans la même base si on a tous les prix d'un groupe
         prix_moyen_par_groupe[dosage_name] = prix_moyen_par_groupe[dosage_name].notnull()
+        grp_list[dosage_name] = set(prix_moyen_par_groupe[dosage_name].index)
 
-    #Pour chaque groupe
-    i = 0
-    for group in set(table[group_name]):
-        if i % 100 == 0:
-            print str(float(i) / float(len(set(table[group_name])))) + '%'
-        i = i + 1
-        # Dans le cas où les valeurs de prix pour tout le groupe dans les deux base
-        base_cnamts = prix_moyen_par_groupe['cnamts'][group]
-        base_medic = prix_moyen_par_groupe['medic_gouv'][group]
-        if base_cnamts and base_medic:
-            # On garde le groupe avec la variance normalisée la plus faible
-            if prix_var_norm_par_groupe['medic_gouv'][group] < prix_var_norm_par_groupe['cnamts'][group]:
-                table.loc[table[group_name] == group, 'base_choisie'] = 'medic_gouv'
-            else:
-                table.loc[table[group_name] == group, 'base_choisie'] = 'cnamts'
-        elif base_medic:
-            table.loc[table[group_name] == group, 'base_choisie'] = 'medic_gouv'
-        elif base_cnamts > 0:
-            table.loc[table[group_name] == group, 'base_choisie'] = 'cnamts'
-        else:
-            # TODO: 
-            table.loc[table[group_name] == group, 'base_choisie'] = 'inconnu'
-            # Enfin, si on a deux valeurs différentes, on calcule le prix relativement à la moyenne du groupe.
-            # Le prix "moyen" est en réalité la somme des prix mais ca n'a pas de conséquences
-#                 table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda1, axis=1)
-#                 # print('f')
-#                 table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda2, axis=1)
+    diff = grp_list['cnamts'].difference(grp_list['medic_gouv'])
+    assert len(diff) == 0
+    
+    var_inf_in_medic = prix_var_norm_par_groupe['medic_gouv'] < prix_var_norm_par_groupe['cnamts']
+    var_inf_in_medic[var_inf_in_medic]
+    
+    # on fera les autres cas (présence dans une seule base) 
+    # si on a des groupes dans une base et pas dans l'autre.
+    
+    # Dans le cas où les valeurs de prix pour tout le groupe dans les deux base
+    # On garde le groupe avec la variance normalisée la plus faible
+    table.loc[table[group_name].isin(var_inf_in_medic[var_inf_in_medic].index), 'base_choisie'] = 'medic_gouv'
+    table.loc[table[group_name].isin(var_inf_in_medic[~var_inf_in_medic].index), 'base_choisie'] = 'cnamts'
+    
+    table['test'] = table['Id_Groupe'].isnull()
+    table.groupby(['test', 'base_choisie']).size()
+    
+    todo = table['base_choisie'] == 'inconnu'
+    medic = table['prix_par_dosage_medic_gouv'].notnull()
+    cnam = table['prix_par_dosage_cnamts'].notnull()
+    table.loc[medic & todo, 'base_choisie'] = 'medic_gouv'
+    todo = table['base_choisie'] == 'inconnu'
+    table.loc[cnam & todo, 'base_choisie'] = 'medic_gouv'
+    
+    todo = table['base_choisie'] == 'inconnu'
+    print(str(todo.sum()) + " lignes n'ont pas de dosage")
+
+#     i = 0
+#     for group in set(prix_moyen_par_groupe['cnamts'].index):
+#         if i % 100 == 0:
+#             print str(float(i) / float(len(set(table[group_name])))) + '%'
+#         i = i + 1
+#         # Dans le cas où les valeurs de prix pour tout le groupe dans les deux base
+#         base_cnamts = prix_moyen_par_groupe['cnamts'][group]
+#         base_medic = prix_moyen_par_groupe['medic_gouv'][group]
+#         if base_cnamts and base_medic:
+#         # On garde le groupe avec la variance normalisée la plus faible
+#             if prix_var_norm_par_groupe['medic_gouv'][group] < prix_var_norm_par_groupe['cnamts'][group]:
+#                 table.loc[table[group_name] == group, 'base_choisie'] = 'medic_gouv'
+#             else:
+#                 table.loc[table[group_name] == group, 'base_choisie'] = 'cnamts'
+#         elif base_medic:
+#             table.loc[table[group_name] == group, 'base_choisie'] = 'medic_gouv'
+#         elif base_cnamts > 0:
+#             table.loc[table[group_name] == group, 'base_choisie'] = 'cnamts'
+#         else:
+#             # TODO: 
+#             table.loc[table[group_name] == group, 'base_choisie'] = 'inconnu'
+#             # Enfin, si on a deux valeurs différentes, on calcule le prix relativement à la moyenne du groupe.
+#             # Le prix "moyen" est en réalité la somme des prix mais ca n'a pas de conséquences
+#     #                 table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda1, axis=1)
+#     #                 # print('f')
+#     #                 table[table['base_choisie'].isnull()] = table[table['base_choisie'].isnull()].apply(choix_de_la_base_lambda2, axis=1)
+
     return table
 
 
