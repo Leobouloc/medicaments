@@ -53,7 +53,12 @@ def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     table['Dosage_num'] = table['Dosage'].str.findall('\d*\.?\d+').str.get(0)
     table['Dosage_num'] = table['Dosage_num'].astype(float)
     table['dosage_par_prestation_medic_gouv'] = table['Dosage_num']*table['nb_ref_in_label_medic_gouv']
-    table['dosage_par_prestation_medic_gouv'].replace(0, np.nan, inplace=True)
+    table['dosage_par_prestation_medic_gouv'].replace(0, np.nan, inplace=True)   
+    
+    # Moved from exploitation_sniiram
+    table['role'] = table['Type'] == 0 # True pour le princeps et False pour le générique
+    table.loc[:, 'Id_Groupe'] = table.loc[:, 'Id_Groupe'].astype(int)
+    table.loc[:, 'role'] = table.loc[:, 'role'].astype(bool) #pour faire planter si on a trois groupes...
     return table
 
 def dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):

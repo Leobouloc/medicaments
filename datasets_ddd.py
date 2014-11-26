@@ -81,7 +81,7 @@ def calcul_dj_par_presta(table, atc_ddd):
 
 
 def create_dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
-    table = dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
+    table = dataset_plus(from_gouv, maj_gouv, from_cnamts, force)
     ddd = load_atc_ddd(from_ddd)
     print (' avant séléction par Id_Groupe :' + str(len(table)))
     table = table.loc[table['Id_Groupe'].notnull(), :]
