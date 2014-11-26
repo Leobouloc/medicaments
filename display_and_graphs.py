@@ -165,7 +165,7 @@ def graph_ma(group):
     plt.show()
 
 
-def graph_prix_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe', average=False, string_atc='CODE_ATC_4'):
+def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', average=False, string_atc='CODE_ATC_4'):
     '''Crée le plot du prix par substance pour tous les médicaments d'une même classe ATC'''
 
     ###############################################################################
@@ -233,7 +233,24 @@ def graph_prix_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='I
     plt.show()
 
 
-def graph_volume_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe',
+def _auto_fill_var(input_val):
+    ''' détermine de quel groupe on parle à partir de la valeur entrée
+        retourne le nom de la variable du groupe identifié '''
+    if input_val is None:
+        raise Exception('il faut donner une valeur')
+
+    if isinstance(input_val, str):
+        if len(input_val) == 5:
+            return 'CODE_ATC_4'
+        elif len(input_val) == 7:
+            return 'CODE_ATC'
+        raise Exception('input val is unidentified')
+    elif isinstance(input_val, int):
+        return 'Id_Groupe'
+    raise Exception('input val is unidentified')
+
+
+def graph_volume_classe(input_val=None, base_brute, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe',
                         make_sum=False, proportion=False, average_over=12,
                         variations=False, display='cout', write_on=True):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
@@ -247,45 +264,21 @@ def graph_volume_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by=
 
     ###############################################################################
     ########### Début : Remplissage automatique des variables
+    group = _auto_fill_var(input_val)
+    if group == 'CODE_ATC_4':
+        code_atc4 = input_val
+    if group == 'CODE_ATC':
+        code_atc4 = input_val[:-2]
+    if group == 'Id_group':
+        code_atc4 =  base_brute.loc[base_brute['Id_Groupe'] == input_val, 'CODE_ATC_4'].iloc[0]
 
-    # On choisit par défaut l'ATC de niveau 4 pour le display
-    string_atc = 'CODE_ATC'
-
-    if input_val != None:
-        if isinstance(input_val, str):
-            if len(input_val) == 5:
-                CODE_ATC = input_val
-                string_atc = 'CODE_ATC_4'
-            elif len(input_val) == 7:
-                CODE_ATC = input_val
-                string_atc = 'CODE_ATC'
-            else:
-                print 'input_val is unidentified string'
-        elif isinstance(input_val, int):
-            Id_Groupe = input_val
-        else:
-            print 'input val is unidentified'
-
-    # Si on entre un ATC complet, on display l'ATC complet
-    if CODE_ATC is not None and len(CODE_ATC) == 7:
-        string_atc = 'CODE_ATC'
-
-    #Si on rentre un groupe, on détermine le code ATC niv 4 associé
-    if Id_Groupe is not None:
-        CODE_ATC = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_atc].iloc[0]
-        if not isinstance(CODE_ATC, unicode):
-            print 'CODE_ATC_4 inconnu'
-
-    ########### Fin : Remplissage automatique des variables
-    ###############################################################################
-    ########### Début : Selection des données à visualiser
-
-    plt.close()
+    assert isinstance(code_atc4, unicode)
+            
+    period, period_prix, period_prix_par_dosage, period_nb_dj_rembourse, period_prix_par_dj = all_periods(base_brute)
     assert sorted(period) == period
     assert sorted(period_prix) == period_prix
-    i = 0 # Sert pour le choix de la couleur
 
-    select = base_brute.loc[:, string_atc] == CODE_ATC
+    select = base_brute[string_atc] == CODE_ATC
 
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
@@ -295,7 +288,7 @@ def graph_volume_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by=
         tab1.columns = period
         tab2.columns = period
         output = tab1 * tab2
-    elif display == 'volume':
+    if display == 'volume':
         output = base_brute.loc[select, period_nb_dj_rembourse]
 
     if variations:
@@ -306,14 +299,15 @@ def graph_volume_classe(input_val=None, CODE_ATC=None, Id_Groupe=None, color_by=
     sum_output = output.sum(axis=0, skipna=True)
 
     ########### Fin : Selection des données à visualiser
-    ###############################################################################
-    ########### Début : Visualisation
+    ##########################################################################
 
+    ########### Début : Visualisation
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
+    i = 0 # Sert pour le choix de la couleur
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
-    for value in set(base_brute.loc[base_brute.loc[:, string_atc]==CODE_ATC, color_by]):
+    for value in set(base_brute.loc[select, color_by]):
 
         output_group = output.loc[base_brute.loc[select, color_by] == value]
 
