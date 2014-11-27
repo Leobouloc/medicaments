@@ -1,0 +1,14 @@
+eclipse.preferences.version=1
+encoding//exemples/__init__.py=utf-8
+encoding//load_data/atc_ddd.py=utf-8
+encoding//load_data/bdm_cnamts.py=utf-8
+encoding//load_data/bdm_cnamts_prix.py=utf-8
+encoding//load_data/medic_gouv.py=cp1252
+encoding//load_data/sniiram.py=utf-8
+encoding/CONFIG.py=utf-8
+encoding/choix_de_la_base.py=utf-8
+encoding/datasets.py=cp1252
+encoding/datasets_ddd.py=cp1252
+encoding/display_and_graphs.py=utf-8
+encoding/exploitation_sniiram.py=utf-8
+encoding/metriques.py=utf-8

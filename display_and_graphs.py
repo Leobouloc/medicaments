@@ -7,6 +7,9 @@ Created on Thu Oct 02 10:12:13 2014
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+
+from exploitation_sniiram import all_periods
 
 colors = [hex for name, hex in matplotlib.colors.cnames.iteritems()]
 colors.remove('#FFE4E1')
@@ -278,18 +281,20 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
     assert sorted(period) == period
     assert sorted(period_prix) == period_prix
 
-    select = base_brute['CODE_ATC_4'] == code_atc4
 
+    tab = base_brute[base_brute['CODE_ATC_4'] == code_atc4]
+    
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
-        tab1 = base_brute.loc[select, period_nb_dj_rembourse]
-        tab2 = base_brute.loc[select, period_prix_par_dj]
+        tab1 = tab.loc[:, period_nb_dj_rembourse]
+        tab2 = tab.loc[:, period_prix_par_dj]
         #Faire la moyenne
         tab1.columns = period
         tab2.columns = period
-        output = tab1 * tab2
+        output = tab1*tab2
     if display == 'volume':
-        output = base_brute.loc[select, period_nb_dj_rembourse]
+        output = tab.loc[:, period_nb_dj_rembourse]
+        output.columns = period
 
     if variations:
         output = evolution(output)
@@ -339,16 +344,18 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
                             idx_date_princeps = average_over/2
                         elif (len(period) - idx_date_princeps) < average_over/2:
                             idx_date_princeps = len(period) - average_over/2
-                         = output_group[idx_date_princeps]
+                        output_date_princeps = output_group[idx_date_princeps]
                         info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
 
-                        print (idx_date_princeps, y)
-                        if not np.isnan(y):
-                            ax.annotate(info_str, xytext=(x,y), color = colors[i], xy=(0,0), annotation_clip = False)
-                            x = princeps['premiere_vente']
-                            x = get_index(x)
-                            y = output_group[x]
-                            ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
+                        print (idx_date_princeps, output_date_princeps)
+                        if not np.isnan(output_date_princeps):
+                            ax.annotate(info_str, xytext=(idx_date_princeps, output_date_princeps),
+                                        color = colors[i], xy=(0,0), annotation_clip = False)
+#                            dates_princeps = princeps['premiere_vente']
+#                            x = get_index(x)
+#                            output_date_princeps = output_group[x]
+                            ax.scatter(idx_date_princeps, output_date_princeps,
+                                       marker = 'o', color = colors[i], s = 100)
         ####### Fin : Visualisation/ Somme sur les groupes
         ###########################################################################
         ####### Début : Visualisation/ Pas de somme sur les groupes
@@ -357,11 +364,10 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
 
                 #Mise en place de la légende
                 if write_on:
-                    a = base_brute.loc[select]
-                    b = a.loc[base_brute.loc[select, color_by] == value]
+                    b = tab.loc[tab[color_by] == value]
                     label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
                     ax.plot(output_group.loc[j,:], color = colors[i])
-                    x = get_index(b['premiere_vente'].iloc[j])
+                    x = period.index(b['premiere_vente'].iloc[j])
                     if x < average_over/2:
                         x = average_over/2
                     a = float(output_group.loc[j, x])
