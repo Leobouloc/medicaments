@@ -283,7 +283,16 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
 
 
     tab = base_brute[base_brute['CODE_ATC_4'] == code_atc4]
-    
+
+    # utile si on trace par groupe
+    # Determiner pour chaque groupe la date du premier générique
+    if color_by == 'Id_Groupe':
+        
+        last_period = int(max(period))
+        grp = base_brute[base_brute['Type'] == 1].groupby('Id_Groupe')
+        date_generication_groupe = grp['premiere_vente'].min()
+        date_generication_groupe.fillna(last_period, inplace=True)
+
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
         tab1 = tab.loc[:, period_nb_dj_rembourse]
