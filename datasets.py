@@ -44,8 +44,9 @@ def create_dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
 def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     table = dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
     # code ATC de niveau 4
-    table['CODE_ATC'].fillna('inconnu', inplace=True)
-    table['CODE_ATC_4'] = table['CODE_ATC'].str[:5]
+    selector = table['CODE_ATC'].notnull()
+    table['CODE_ATC_4'] = np.nan
+    table.loc[selector, 'CODE_ATC_4'] = table[selector, 'CODE_ATC'].str[:5]
     # dosage_par_prestation_cnamts
     table['dosage_par_prestation_cnamts'] = table['DOSAGE_SA']*table['NB_UNITES']
     # dosage_par_prestation de medic.gouv

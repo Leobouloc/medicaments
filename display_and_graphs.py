@@ -260,8 +260,8 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
     '''average over détermine l'amplitude choisie pour le lissage (0 : pas de lissage)'''
     '''variations = True permet d'afficher les variation'''
 
-    assert display in ['cout', 'volume']
-
+    assert display in ['cout', 'volume'] 
+    
     ###############################################################################
     ########### Début : Remplissage automatique des variables
     group = _auto_fill_var(input_val)
@@ -272,13 +272,13 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
     if group == 'Id_group':
         code_atc4 =  base_brute.loc[base_brute['Id_Groupe'] == input_val, 'CODE_ATC_4'].iloc[0]
 
-    assert isinstance(code_atc4, unicode)
+    assert isinstance(code_atc4, str)
             
     period, period_prix, period_prix_par_dosage, period_nb_dj_rembourse, period_prix_par_dj = all_periods(base_brute)
     assert sorted(period) == period
     assert sorted(period_prix) == period_prix
 
-    select = base_brute[string_atc] == CODE_ATC
+    select = base_brute['CODE_ATC_4'] == code_atc4
 
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
@@ -324,25 +324,25 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
             ax.plot(output_group.transpose(), color = colors[i], label = str(value))
             if color_by == 'Id_Groupe':
                 date_generique = date_generication_groupe.loc[value]
-                x = get_index(date_generique)
-                ymax = output_group[x]
-                ax.vlines(x,0, ymax, color = colors[i], linestyles = '--')
+                idx_date_generique = period.index(date_generique)
+                ymax = output_group[idx_date_generique]
+                ax.vlines(idx_date_generique,0, ymax, color = colors[i], linestyles = '--')
+                # pour afficher les chutes de brevets (à vérifier)
                 if write_on and color_by == 'Id_Groupe':
-                    princeps = base_brute[base_brute.apply(lambda x: x['Id_Groupe']==value and x['Type'] == 0, axis = 1)]
+                    princeps = base_brute[(base_brute['Id_Groupe'] == value) & (base_brute['Type'] == 0)]
                     if len(princeps) != 0:
-                        index = princeps['premiere_vente'].argmin()
-                        princeps = princeps.loc[index]
-                        x = princeps['premiere_vente']
+                        index_min = princeps['premiere_vente'].argmin()
+                        date_princeps = princeps.loc[index_min, 'premiere_vente']
                         #print(output_group.index)
-                        x = get_index(x)
-                        if x < average_over/2:
-                            x = average_over/2
-                        elif (len(period) - x) < average_over/2:
-                            x = len(period) - average_over/2
-                        y = output_group[x]
+                        idx_date_princeps = period.index(date_princeps)
+                        if idx_date_princeps < average_over/2:
+                            idx_date_princeps = average_over/2
+                        elif (len(period) - idx_date_princeps) < average_over/2:
+                            idx_date_princeps = len(period) - average_over/2
+                         = output_group[idx_date_princeps]
                         info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
 
-                        print (x, y)
+                        print (idx_date_princeps, y)
                         if not np.isnan(y):
                             ax.annotate(info_str, xytext=(x,y), color = colors[i], xy=(0,0), annotation_clip = False)
                             x = princeps['premiere_vente']
