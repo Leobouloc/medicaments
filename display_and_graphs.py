@@ -323,8 +323,7 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
 
     i = 0 # Sert pour le choix de la couleur
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
-    for value in set(tab.loc[:, color_by].unique()):
-
+    for value, output_group in tab.groupby(color_by):
         output_group = output.loc[tab.loc[:, color_by] == value]
 
         if proportion:
@@ -351,16 +350,16 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
                         date_princeps = princeps.loc[index_min, 'premiere_vente']
                         #print(output_group.index)
                         idx_date_princeps = period.index(str(int(date_princeps)))
-                        if idx_date_princeps < average_over/2:
-                            idx_date_princeps = average_over/2
-                        elif (len(period) - idx_date_princeps) < average_over/2:
-                            idx_date_princeps = len(period) - average_over/2
+                        if idx_date_princeps < average_over / 2:
+                            idx_date_princeps = average_over / 2
+                        elif (len(period) - idx_date_princeps) < average_over / 2:
+                            idx_date_princeps = len(period) - average_over / 2
                         output_date_princeps = output_group[idx_date_princeps]
                         info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
 
                         if not np.isnan(output_date_princeps):
                             ax.annotate(info_str, xytext=(idx_date_princeps, output_date_princeps),
-                                        color = colors[i], xy=(0,0), annotation_clip = False)
+                                        color=colors[i], xy=(0,0), annotation_clip = False)
 
                             dates_princeps = princeps['premiere_vente']
                             x = [period.index(str(int(date))) for date in dates_princeps]
