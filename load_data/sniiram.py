@@ -16,6 +16,7 @@ def add_date_vente_observee(sniiram):
     # Determiner les dates de premieres ventes
     periods = sniiram.columns
     assert all(periods == sorted(periods))
+    # TODO: change periods in string
     premiere_vente = pd.Series(index=sniiram.index)
     derniere_vente = pd.Series(index=sniiram.index)
     for month in periods:
