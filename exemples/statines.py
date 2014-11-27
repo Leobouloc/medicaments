@@ -23,8 +23,12 @@ statine['premiere_vente'].hist(by=statine['Id_Groupe'], bins=50)
 test = statine.groupby('Id_Groupe').sum()
 test[all_periods(statine)[3]].T.plot()
 
-test = statine.groupby('CODE_ATC').sum()
+
+test = statine.groupby(['CODE_ATC','Type']).sum()
 test[all_periods(statine)[3]].T.plot()
+
+princeps = statine[statine['Type']==0]
+princeps.groupby('CODE_ATC').sum()[all_periods(statine)[3]].T.plot()
 
 
 statine
