@@ -254,7 +254,7 @@ def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', aver
     plt.show()
 
 
-def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe',
+def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
                         make_sum=False, proportion=False, average_over=12,
                         variations=False, display='cout', write_on=True):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
@@ -350,7 +350,7 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
                         index_min = princeps['premiere_vente'].argmin()
                         date_princeps = princeps.loc[index_min, 'premiere_vente']
                         #print(output_group.index)
-                        idx_date_princeps = period.index(date_princeps)
+                        idx_date_princeps = period.index(str(int(date_princeps)))
                         if idx_date_princeps < average_over/2:
                             idx_date_princeps = average_over/2
                         elif (len(period) - idx_date_princeps) < average_over/2:
@@ -358,15 +358,16 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
                         output_date_princeps = output_group[idx_date_princeps]
                         info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
 
-                        print (idx_date_princeps, output_date_princeps)
                         if not np.isnan(output_date_princeps):
                             ax.annotate(info_str, xytext=(idx_date_princeps, output_date_princeps),
                                         color = colors[i], xy=(0,0), annotation_clip = False)
-#                            dates_princeps = princeps['premiere_vente']
-#                            x = get_index(x)
-#                            output_date_princeps = output_group[x]
-                            ax.scatter(idx_date_princeps, output_date_princeps,
-                                       marker = 'o', color = colors[i], s = 100)
+
+                            dates_princeps = princeps['premiere_vente']
+                            x = [period.index(str(int(date))) for date in dates_princeps]
+                            output_date_princeps = output_group[x]
+                            ax.scatter(dates_princeps, output_date_princeps,
+                                           marker='o', color=colors[i], s=100)
+
         ####### Fin : Visualisation/ Somme sur les groupes
         ###########################################################################
         ####### Début : Visualisation/ Pas de somme sur les groupes
@@ -378,19 +379,19 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
                     b = tab.loc[tab[color_by] == value]
                     label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
                     ax.plot(output_group.loc[j,:], color = colors[i])
-                    date = str(int(b['premiere_vente'].iloc[j]))
-                    x = period.index(date)
-                    if x < average_over/2:
-                        x = average_over/2
-                    a = float(output_group.loc[j, x])
-                    print type (a)
-                    if np.isnan(a):
-                        a = -1
-                    xytext = (x, a)
+                    date = b['premiere_vente'].iloc[j]
+                    if date > 0:
+                        date = str(int(date))
+                        x = period.index(date)
+                        if x < average_over/2:
+                            x = average_over/2
+                        a = float(output_group.loc[j, x])
+                        if np.isnan(a):
+                            a = -1
+                        xytext = (x, a)
                 #print type(output_group.loc[j, x+6])
 
-                ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
-                print xytext
+                    ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
         ####### Fin : Visualisation/ Pas de somme sur les groupes
         ###########################################################################
 
