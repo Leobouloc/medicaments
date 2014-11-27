@@ -8,6 +8,7 @@ Created on Thu Oct 02 10:12:13 2014
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from pandas import DataFrame
 
 from exploitation_sniiram import all_periods
 
@@ -120,7 +121,7 @@ def moving_average(table, size=12):
     else:
         assert size % 2 == 0
         mid_size = size/2
-        output = pd.DataFrame(columns=table.columns, index=table.index)
+        output = DataFrame(columns=table.columns, index=table.index)
         for date in range(mid_size, len(table.columns) - mid_size):
             output[output.columns[date]] = table.iloc[:, (date-mid_size+1):(date+mid_size+1)].mean(axis=1)  # les dépenses du mois sont prise en fin de mois
     #     for group in output.index:
@@ -166,6 +167,23 @@ def graph_ma(group):
     #print output
     output.plot()
     plt.show()
+
+
+def _auto_fill_var(input_val):
+    ''' détermine de quel groupe on parle à partir de la valeur entrée
+        retourne le nom de la variable du groupe identifié '''
+    if input_val is None:
+        raise Exception('il faut donner une valeur')
+
+    if isinstance(input_val, str):
+        if len(input_val) == 5:
+            return 'CODE_ATC_4'
+        elif len(input_val) == 7:
+            return 'CODE_ATC'
+        raise Exception('input val is unidentified')
+    elif isinstance(input_val, int):
+        return 'Id_Groupe'
+    raise Exception('input val is unidentified')
 
 
 def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', average=False, string_atc='CODE_ATC_4'):
@@ -236,23 +254,6 @@ def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', aver
     plt.show()
 
 
-def _auto_fill_var(input_val):
-    ''' détermine de quel groupe on parle à partir de la valeur entrée
-        retourne le nom de la variable du groupe identifié '''
-    if input_val is None:
-        raise Exception('il faut donner une valeur')
-
-    if isinstance(input_val, str):
-        if len(input_val) == 5:
-            return 'CODE_ATC_4'
-        elif len(input_val) == 7:
-            return 'CODE_ATC'
-        raise Exception('input val is unidentified')
-    elif isinstance(input_val, int):
-        return 'Id_Groupe'
-    raise Exception('input val is unidentified')
-
-
 def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe',
                         make_sum=False, proportion=False, average_over=12,
                         variations=False, display='cout', write_on=True):
@@ -263,8 +264,8 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
     '''average over détermine l'amplitude choisie pour le lissage (0 : pas de lissage)'''
     '''variations = True permet d'afficher les variation'''
 
-    assert display in ['cout', 'volume'] 
-    
+    assert display in ['cout', 'volume']
+
     ###############################################################################
     ########### Début : Remplissage automatique des variables
     group = _auto_fill_var(input_val)
@@ -276,7 +277,7 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
         code_atc4 =  base_brute.loc[base_brute['Id_Groupe'] == input_val, 'CODE_ATC_4'].iloc[0]
 
     assert isinstance(code_atc4, str)
-            
+
     period, period_prix, period_prix_par_dosage, period_nb_dj_rembourse, period_prix_par_dj = all_periods(base_brute)
     assert sorted(period) == period
     assert sorted(period_prix) == period_prix
@@ -287,11 +288,12 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
     # utile si on trace par groupe
     # Determiner pour chaque groupe la date du premier générique
     if color_by == 'Id_Groupe':
-        
         last_period = int(max(period))
         grp = base_brute[base_brute['Type'] == 1].groupby('Id_Groupe')
         date_generication_groupe = grp['premiere_vente'].min()
         date_generication_groupe.fillna(last_period, inplace=True)
+        date_generication_groupe = date_generication_groupe.astype(int)
+        date_generication_groupe = date_generication_groupe.apply(str)
 
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
@@ -321,9 +323,9 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
 
     i = 0 # Sert pour le choix de la couleur
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
-    for value in set(base_brute.loc[select, color_by]):
+    for value in set(tab.loc[:, color_by].unique()):
 
-        output_group = output.loc[base_brute.loc[select, color_by] == value]
+        output_group = output.loc[tab.loc[:, color_by] == value]
 
         if proportion:
             output_group = output_group.div(sum_output)
@@ -335,7 +337,7 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
         ###########################################################################
         ####### Début : Visualisation/ Somme sur les groupes
         if make_sum:
-            ax.plot(output_group.transpose(), color = colors[i], label = str(value))
+            ax.plot(output_group.transpose(), color=colors[i], label=str(value))
             if color_by == 'Id_Groupe':
                 date_generique = date_generication_groupe.loc[value]
                 idx_date_generique = period.index(date_generique)
@@ -376,7 +378,8 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
                     b = tab.loc[tab[color_by] == value]
                     label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
                     ax.plot(output_group.loc[j,:], color = colors[i])
-                    x = period.index(b['premiere_vente'].iloc[j])
+                    date = str(int(b['premiere_vente'].iloc[j]))
+                    x = period.index(date)
                     if x < average_over/2:
                         x = average_over/2
                     a = float(output_group.loc[j, x])
