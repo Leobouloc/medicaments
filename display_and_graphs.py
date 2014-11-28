@@ -7,6 +7,10 @@ Created on Thu Oct 02 10:12:13 2014
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+from pandas import DataFrame
+
+from exploitation_sniiram import all_periods
 
 colors = [hex for name, hex in matplotlib.colors.cnames.iteritems()]
 colors.remove('#FFE4E1')
@@ -117,7 +121,7 @@ def moving_average(table, size=12):
     else:
         assert size % 2 == 0
         mid_size = size/2
-        output = pd.DataFrame(columns=table.columns, index=table.index)
+        output = DataFrame(columns=table.columns, index=table.index)
         for date in range(mid_size, len(table.columns) - mid_size):
             output[output.columns[date]] = table.iloc[:, (date-mid_size+1):(date+mid_size+1)].mean(axis=1)  # les dépenses du mois sont prise en fin de mois
     #     for group in output.index:
@@ -163,6 +167,23 @@ def graph_ma(group):
     #print output
     output.plot()
     plt.show()
+
+
+def _auto_fill_var(input_val):
+    ''' détermine de quel groupe on parle à partir de la valeur entrée
+        retourne le nom de la variable du groupe identifié '''
+    if input_val is None:
+        raise Exception('il faut donner une valeur')
+
+    if isinstance(input_val, str):
+        if len(input_val) == 5:
+            return 'CODE_ATC_4'
+        elif len(input_val) == 7:
+            return 'CODE_ATC'
+        raise Exception('input val is unidentified')
+    elif isinstance(input_val, int):
+        return 'Id_Groupe'
+    raise Exception('input val is unidentified')
 
 
 def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', average=False, string_atc='CODE_ATC_4'):
@@ -233,24 +254,7 @@ def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', aver
     plt.show()
 
 
-def _auto_fill_var(input_val):
-    ''' détermine de quel groupe on parle à partir de la valeur entrée
-        retourne le nom de la variable du groupe identifié '''
-    if input_val is None:
-        raise Exception('il faut donner une valeur')
-
-    if isinstance(input_val, str):
-        if len(input_val) == 5:
-            return 'CODE_ATC_4'
-        elif len(input_val) == 7:
-            return 'CODE_ATC'
-        raise Exception('input val is unidentified')
-    elif isinstance(input_val, int):
-        return 'Id_Groupe'
-    raise Exception('input val is unidentified')
-
-
-def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=None, color_by='Id_Groupe',
+def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
                         make_sum=False, proportion=False, average_over=12,
                         variations=False, display='cout', write_on=True):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
@@ -260,8 +264,8 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
     '''average over détermine l'amplitude choisie pour le lissage (0 : pas de lissage)'''
     '''variations = True permet d'afficher les variation'''
 
-    assert display in ['cout', 'volume'] 
-    
+    assert display in ['cout', 'volume']
+
     ###############################################################################
     ########### Début : Remplissage automatique des variables
     group = _auto_fill_var(input_val)
@@ -273,23 +277,35 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
         code_atc4 =  base_brute.loc[base_brute['Id_Groupe'] == input_val, 'CODE_ATC_4'].iloc[0]
 
     assert isinstance(code_atc4, str)
-            
+
     period, period_prix, period_prix_par_dosage, period_nb_dj_rembourse, period_prix_par_dj = all_periods(base_brute)
     assert sorted(period) == period
     assert sorted(period_prix) == period_prix
 
-    select = base_brute['CODE_ATC_4'] == code_atc4
+
+    tab = base_brute[base_brute['CODE_ATC_4'] == code_atc4]
+
+    # utile si on trace par groupe
+    # Determiner pour chaque groupe la date du premier générique
+    if color_by == 'Id_Groupe':
+        last_period = int(max(period))
+        grp = base_brute[base_brute['Type'] == 1].groupby('Id_Groupe')
+        date_generication_groupe = grp['premiere_vente'].min()
+        date_generication_groupe.fillna(last_period, inplace=True)
+        date_generication_groupe = date_generication_groupe.astype(int)
+        date_generication_groupe = date_generication_groupe.apply(str)
 
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
-        tab1 = base_brute.loc[select, period_nb_dj_rembourse]
-        tab2 = base_brute.loc[select, period_prix_par_dj]
+        tab1 = tab.loc[:, period_nb_dj_rembourse]
+        tab2 = tab.loc[:, period_prix_par_dj]
         #Faire la moyenne
         tab1.columns = period
         tab2.columns = period
-        output = tab1 * tab2
+        output = tab1*tab2
     if display == 'volume':
-        output = base_brute.loc[select, period_nb_dj_rembourse]
+        output = tab.loc[:, period_nb_dj_rembourse]
+        output.columns = period
 
     if variations:
         output = evolution(output)
@@ -307,9 +323,8 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
 
     i = 0 # Sert pour le choix de la couleur
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
-    for value in set(base_brute.loc[select, color_by]):
-
-        output_group = output.loc[base_brute.loc[select, color_by] == value]
+    for value, output_group in tab.groupby(color_by):
+        output_group = output.loc[tab.loc[:, color_by] == value]
 
         if proportion:
             output_group = output_group.div(sum_output)
@@ -321,7 +336,7 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
         ###########################################################################
         ####### Début : Visualisation/ Somme sur les groupes
         if make_sum:
-            ax.plot(output_group.transpose(), color = colors[i], label = str(value))
+            ax.plot(output_group.transpose(), color=colors[i], label=str(value))
             if color_by == 'Id_Groupe':
                 date_generique = date_generication_groupe.loc[value]
                 idx_date_generique = period.index(date_generique)
@@ -334,21 +349,24 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
                         index_min = princeps['premiere_vente'].argmin()
                         date_princeps = princeps.loc[index_min, 'premiere_vente']
                         #print(output_group.index)
-                        idx_date_princeps = period.index(date_princeps)
-                        if idx_date_princeps < average_over/2:
-                            idx_date_princeps = average_over/2
-                        elif (len(period) - idx_date_princeps) < average_over/2:
-                            idx_date_princeps = len(period) - average_over/2
-                         = output_group[idx_date_princeps]
+                        idx_date_princeps = period.index(str(int(date_princeps)))
+                        if idx_date_princeps < average_over / 2:
+                            idx_date_princeps = average_over / 2
+                        elif (len(period) - idx_date_princeps) < average_over / 2:
+                            idx_date_princeps = len(period) - average_over / 2
+                        output_date_princeps = output_group[idx_date_princeps]
                         info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
 
-                        print (idx_date_princeps, y)
-                        if not np.isnan(y):
-                            ax.annotate(info_str, xytext=(x,y), color = colors[i], xy=(0,0), annotation_clip = False)
-                            x = princeps['premiere_vente']
-                            x = get_index(x)
-                            y = output_group[x]
-                            ax.scatter(x,y, marker = 'o', color = colors[i], s = 100)
+                        if not np.isnan(output_date_princeps):
+                            ax.annotate(info_str, xytext=(idx_date_princeps, output_date_princeps),
+                                        color=colors[i], xy=(0,0), annotation_clip = False)
+
+                            dates_princeps = princeps['premiere_vente']
+                            x = [period.index(str(int(date))) for date in dates_princeps]
+                            output_date_princeps = output_group[x]
+                            ax.scatter(dates_princeps, output_date_princeps,
+                                           marker='o', color=colors[i], s=100)
+
         ####### Fin : Visualisation/ Somme sur les groupes
         ###########################################################################
         ####### Début : Visualisation/ Pas de somme sur les groupes
@@ -357,22 +375,22 @@ def graph_volume_classe(base_brute, input_val=None, CODE_ATC=None, Id_Groupe=Non
 
                 #Mise en place de la légende
                 if write_on:
-                    a = base_brute.loc[select]
-                    b = a.loc[base_brute.loc[select, color_by] == value]
+                    b = tab.loc[tab[color_by] == value]
                     label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
                     ax.plot(output_group.loc[j,:], color = colors[i])
-                    x = get_index(b['premiere_vente'].iloc[j])
-                    if x < average_over/2:
-                        x = average_over/2
-                    a = float(output_group.loc[j, x])
-                    print type (a)
-                    if np.isnan(a):
-                        a = -1
-                    xytext = (x, a)
+                    date = b['premiere_vente'].iloc[j]
+                    if date > 0:
+                        date = str(int(date))
+                        x = period.index(date)
+                        if x < average_over/2:
+                            x = average_over/2
+                        a = float(output_group.loc[j, x])
+                        if np.isnan(a):
+                            a = -1
+                        xytext = (x, a)
                 #print type(output_group.loc[j, x+6])
 
-                ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
-                print xytext
+                    ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
         ####### Fin : Visualisation/ Pas de somme sur les groupes
         ###########################################################################
 
