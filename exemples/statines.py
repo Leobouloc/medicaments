@@ -6,6 +6,8 @@ Created on Tue Nov 25 22:37:37 2014
 """
 import exploitation_sniiram
 
+statine = base_brute[base_brute['CODE_ATC_4'] == "C10AA"]
+
 #import display_and_graphs as dis
 #dis.graph_prix_classe('C10AA')
 graph_volume_classe(CODE_ATC="C10AA05")
