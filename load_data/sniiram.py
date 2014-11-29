@@ -33,9 +33,10 @@ def add_date_vente_observee(sniiram):
 
 
 def load_sniiram():
-    path = os.path.join(path_sniiram, 'PHARMA.csv')
+#    path = os.path.join(path_sniiram, 'PHARMA.csv')
+    path = os.path.join(path_sniiram, 'since200301.csv')
     table = pd.read_csv(path, sep=';')
-    table.columns = ['cip13', 'date', 'nb']
+    table.columns = ['date', 'cip13', 'nb']
     table['nb'] *= 97
     table['year'] = table['date']//100
     table['cip13'].fillna(1, inplace=True)
