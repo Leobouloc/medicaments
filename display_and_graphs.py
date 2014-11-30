@@ -341,13 +341,12 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
                 date_generique = date_generication_groupe.loc[value]
                 idx_date_generique = period.index(date_generique)
                 ymax = output_group[idx_date_generique]
-                ax.vlines(idx_date_generique,0, ymax, color = colors[i], linestyles = '--')
+                ax.vlines(idx_date_generique, 0, ymax, color = colors[i], linestyles = '--')
                 # pour afficher les chutes de brevets (à vérifier)
-                if write_on and color_by == 'Id_Groupe':
+                if write_on:
                     princeps = base_brute[(base_brute['Id_Groupe'] == value) & (base_brute['Type'] == 0)]
                     if len(princeps) != 0:
-                        index_min = princeps['premiere_vente'].argmin()
-                        date_princeps = princeps.loc[index_min, 'premiere_vente']
+                        date_princeps = min(princeps['premiere_vente'])
                         #print(output_group.index)
                         idx_date_princeps = period.index(str(int(date_princeps)))
                         if idx_date_princeps < average_over / 2:
@@ -355,7 +354,7 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
                         elif (len(period) - idx_date_princeps) < average_over / 2:
                             idx_date_princeps = len(period) - average_over / 2
                         output_date_princeps = output_group[idx_date_princeps]
-                        info_str = str(princeps['LABO']) + ' / ASMR : ' + str(princeps['Valeur_ASMR'])
+                        info_str = str(princeps['Nom_Substance'].iloc[0]) + ' / ASMR : ' + str(princeps['Valeur_ASMR'].iloc[0])
 
                         if not np.isnan(output_date_princeps):
                             ax.annotate(info_str, xytext=(idx_date_princeps, output_date_princeps),
@@ -398,6 +397,7 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
         i = i + 1
     if proportion == False and variations == False:
         plt.plot(sum_output, color = 'k', linestyle = '-', linewidth = 2.0, label = 'Total Classe')
+    
     plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=1)
     ax.set_xticklabels([str(period[i]) for i in range(0, len(period)) if i%12 == 0])
     ax.set_xticks([i for i in range(0, len(period)) if i%12 == 0])
