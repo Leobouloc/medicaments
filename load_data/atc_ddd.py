@@ -22,7 +22,7 @@ rename_vars = {'Chemical Substance': 'CHEMICAL_SUBSTANCE',
                'Chemical Subgroup': 'CHEMICAL_SUBGROUP',
                'DDD': 'DDD'}
 
-def load_atc_ddd(info_utile):
+def load_atc_ddd(info_utile, brut=False):
     print 'Actuellement dans load_atc_ddd'
     path = os.path.join(path_atc_ddd, "atc-ddd.csv")
     tab = pd.read_table(path, header=False, sep = ';')
@@ -35,7 +35,9 @@ def load_atc_ddd(info_utile):
     tab.loc[tab['UNITE'] == 'mcg', 'DDD'] /= 1000
     tab.loc[tab['UNITE'] == 'mcg', 'UNITE'] = 'MG'
 #    tab = tab.apply(recode_ligne, axis=1)
-
+    if brut:
+      return tab
+      
     prob = tab.groupby(['CODE_ATC', 'MODE', 'UNITE']).filter(lambda x: len(x) > 1)
     # les problèmes viennent des NOTE. On a :
     #    assert tab.groupby(['CODE_ATC', 'MODE', 'UNITE', 'NOTE']).size().max() == 1
@@ -49,4 +51,10 @@ def load_atc_ddd(info_utile):
 
 if __name__ == '__main__':
     info_utile = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
-    test = load_atc_ddd(info_utile)
+    test = load_atc_ddd(info_utile, brut=True)
+
+    cond = test.CHEMICAL_SUBSTANCE.str.contains('statin')
+    cond[cond.isnull()] = False
+    test[cond]
+    
+    prob = test.CHEMICAL_SUBSTANCE.isnull()

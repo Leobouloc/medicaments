@@ -416,16 +416,32 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
     return output
 
 if __name__ == '__main__':
-#table = load_medic_gouv(maj_bdm, ['Etat','Date_AMM','CIP7','Label_presta','Date_declar_commerc','Taux_rembours','Prix','Id_Groupe','Type',
+#table = load_medic_gouv(maj_bdm, Z['Etat','Date_AMM','CIP7','Label_presta','Date_declar_commerc','Taux_rembours','Prix','Id_Groupe','Type',
 #                                  'indic_droit_rembours', 'Statu_admin_presta','Element_Pharma','Code_Substance','Nom_Substance','',
 #                                  'Ref_Dosage','Nature_Composant','Substance_Fraction'])
 #     test = load_medic_gouv(maj_bdm)
-    table = load_medic_gouv(maj_bdm, ['CIP13', 'CIP7', 'Label_presta',
-                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
-                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
 
-#    table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
+#    table = load_medic_gouv(maj_bdm, ['CIP7', 'Label_presta',
+#                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
+#                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
 
-#    for var in ['Ref_Dosage', 'Dosage', 'Label_presta']:
-#        print table[var].isnull().sum()
-#        table = table[table[var].notnull()]
+    info_utiles_from_gouv = ['CIP7', 'CIP13', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+                             'Element_Pharma', 'Code_Substance', 'Nom_Substance', 
+                             'Nature_Composant', 'Substance_Fraction',
+                             'Libelle_ASMR', 'Type', 'Ref_Dosage', 'Dosage', 
+                             'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
+                             'indic_droit_rembours', 'Statu_admin_presta',
+                             'Label_presta','Valeur_ASMR',
+                             'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
+    table = load_medic_gouv(maj_bdm, info_utiles_from_gouv)
+    # Test statine
+    cond = table['Nom_Substance'].str.contains('ATORVASTATINE')
+    statine = table[cond]
+    statine['CIP'].value_counts()    
+    
+    
+    table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
+
+    for var in ['Ref_Dosage', 'Dosage', 'Label_presta']:
+        print table[var].isnull().sum()
+        table = table[table[var].notnull()]
