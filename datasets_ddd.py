@@ -121,7 +121,7 @@ def dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
         return table
     except:
         table = create_dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force)
-        table.to_csv(file, sep=',')
+        table.to_csv(file, sep=',', index = False)
         return table
 
 

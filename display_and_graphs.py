@@ -324,8 +324,6 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
     i = 0 # Sert pour le choix de la couleur
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
     for value, output_group in tab.groupby(color_by):
-        output_group = output.loc[tab.loc[:, color_by] == value]
-
         if proportion:
             output_group = output_group.div(sum_output)
         if make_sum:

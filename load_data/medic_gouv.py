@@ -397,10 +397,10 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
     # On met les dates au format datetime
     for var in var_to_keep:
         if 'date' in var or 'Date' in var:
-            print('On retire ' + str(sum(output[var].isnull())) + " valeurs parce " +
-                   "qu'il n'y a pas de date")
-            output = output[pd.notnull(output[var])]
-            output[var]  = output[var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
+#            print('On retire ' + str(sum(output[var].isnull())) + " valeurs parce " +
+#                   "qu'il n'y a pas de date")
+            sel = output[var].notnull()
+            output.loc[sel, var]  = output.loc[sel, var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
             for time_idx in ['month', 'year']:
                 name = var + '_' + time_idx
                 output[name] = 0
@@ -415,17 +415,17 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
     
     return output
 
-#if __name__ == '__main__':
-##table = load_medic_gouv(maj_bdm, ['Etat','Date_AMM','CIP7','Label_presta','Date_declar_commerc','Taux_rembours','Prix','Id_Groupe','Type',
-##                                  'indic_droit_rembours', 'Statu_admin_presta','Element_Pharma','Code_Substance','Nom_Substance','',
-##                                  'Ref_Dosage','Nature_Composant','Substance_Fraction'])
-##     test = load_medic_gouv(maj_bdm)
-#    table = load_medic_gouv(maj_bdm, ['CIP7', 'Label_presta',
-#                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
-#                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
-#
+if __name__ == '__main__':
+#table = load_medic_gouv(maj_bdm, ['Etat','Date_AMM','CIP7','Label_presta','Date_declar_commerc','Taux_rembours','Prix','Id_Groupe','Type',
+#                                  'indic_droit_rembours', 'Statu_admin_presta','Element_Pharma','Code_Substance','Nom_Substance','',
+#                                  'Ref_Dosage','Nature_Composant','Substance_Fraction'])
+#     test = load_medic_gouv(maj_bdm)
+    table = load_medic_gouv(maj_bdm, ['CIP13', 'CIP7', 'Label_presta',
+                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
+                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
+
 #    table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
-#
+
 #    for var in ['Ref_Dosage', 'Dosage', 'Label_presta']:
 #        print table[var].isnull().sum()
 #        table = table[table[var].notnull()]
