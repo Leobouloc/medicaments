@@ -33,12 +33,12 @@ def add_date_vente_observee(sniiram):
 
 
 def load_sniiram():
-#    path = os.path.join(path_sniiram, 'PHARMA.csv')
-    path = os.path.join(path_sniiram, 'since200301.csv')
+#    path = os.path.join(path_sniiram, 'since200301.csv')
+    path = os.path.join(path_sniiram, 'PHARMA.csv')
     table = pd.read_csv(path, sep=';')
-    table.columns = ['date', 'cip13', 'nb']
+    table.columns = ['cip13', 'date', 'nb']
     table['nb'] *= 97
-    table['year'] = table['date']//100
+    table['year'] = table['date'] // 100
     table['cip13'].fillna(1, inplace=True)
     table = table.pivot(index='cip13', columns='date', values='nb')
     # TODO: redresser après 2011
@@ -74,10 +74,10 @@ def load_sniiram2():
 if __name__ == '__main__':
     table = load_sniiram()
     #set_trace()
-    print(table.loc[ table['cip13'] == 3400934917547].groupby('year').sum())
-    table.set_index('cip13', inplace=True)
-    
-    table.loc[ table['cip13'] == 3400934917547].groupby('cip13')['nb'].sum()
+#    print(table.loc[ table['cip13'] == 3400934917547].groupby('year').sum())
+#    table.set_index('cip13', inplace=True)
+#    
+#    table.loc[ table['cip13'] == 3400934917547].groupby('cip13')['nb'].sum()
     
 # test = table.sum(axis=1)
 # test[test.index==9999999999999] / test.sum()
