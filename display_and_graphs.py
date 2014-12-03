@@ -325,6 +325,8 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
     i = 0 # Sert pour le choix de la couleur
     # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
     for value, output_group in tab.groupby(color_by):
+        output_group = output.loc[tab.loc[:, color_by] == value]
+
         if proportion:
             output_group = output_group.div(sum_output)
         if make_sum:
@@ -405,7 +407,7 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
     ###############################################################################
 
 
-def display_classe(base_brute, input_val=None, sum_by=None, color_by=['Id_Groupe'],
+def display_classe(base_brute, input_val=None, sum_by=['CIP'], color_by=['Id_Groupe'],
                         proportion=False, average_over=12,
                         variations=False, display='cout', write_on=True):
     '''Le cout est le produit du dosage vendu et du prix par dosage'''
@@ -416,8 +418,7 @@ def display_classe(base_brute, input_val=None, sum_by=None, color_by=['Id_Groupe
     '''variations = True permet d'afficher les variation'''
 
     assert display in ['cout', 'volume']
-    if sum_by is not None:
-        assert isinstance(sum_by, list)
+    assert isinstance(sum_by, list)
     if color_by is not None:
         assert isinstance(color_by, list)
 
@@ -441,7 +442,7 @@ def display_classe(base_brute, input_val=None, sum_by=None, color_by=['Id_Groupe
 
     # utile si on trace par groupe
     # Determiner pour chaque groupe la date du premier générique
-    if color_by == 'Id_Groupe':
+    if 'Id_Groupe' in color_by:
         last_period = int(max(period))
         grp = base_brute[base_brute['Type'] == 1].groupby('Id_Groupe')
         date_generication_groupe = grp['premiere_vente'].min()
@@ -467,7 +468,7 @@ def display_classe(base_brute, input_val=None, sum_by=None, color_by=['Id_Groupe
         sum_output = output.sum(axis=0, skipna=True)
         output = output.div(sum_output)
 
-    if sum_by:
+    if sum_by != ['CIP']:
         output[sum_by] = tab[sum_by]
         output = output.groupby(sum_by).sum().reset_index()
         tab = tab.groupby(sum_by).first().reset_index()
@@ -480,85 +481,82 @@ def display_classe(base_brute, input_val=None, sum_by=None, color_by=['Id_Groupe
     ax = fig.add_subplot(111)
 
     # on met la couleur, et les valeurs utiles dans output
-    output[['Nom_Substance', 'Valeur_ASMR']] = tab[['Nom_Substance', 'Valeur_ASMR']]
+    vars_to_keep = ['Nom_Substance', 'Valeur_ASMR', 'Dosage', 'premiere_vente']
+    vars_to_keep += color_by
+    output[vars_to_keep] = tab[vars_to_keep]
     color = output.groupby(color_by).first().reset_index()
     color['color'] = range(len(color))
     output = output.merge(color[color_by + ['color']] , on=color_by)
 
-    out_grp = output.groupby(color_by).reset_index()
-    tab_grp = tab.groupby(color_by)
-    i = 0 # Sert pour le choix de la couleur
-    # Pour toutes les valeurs à differencier (ex : value peut prendre 192 (Id du groupe))
-    for value, output_group in out_grp.groupby(color_by):
-        ###########################################################################
-        ####### Début : Visualisation/ Somme sur les groupes
-        ax.plot(output_group.transpose(), color=colors[i], label=str(value))
-        if 'Id_Groupe' in tab_grp[]:
-            out_grp = output.groupby(color_by)
-            date_generique = date_generication_groupe.loc[value_group]
+    for row in output.iterrows():
+        label_row = str(row[0])
+        row = row[1]
+        color_row = colors[row['color']]
+        ax.plot(row[period], color=color_row, label=str(label_row))
+
+        if 'Id_Groupe' in color_by and len(output) < 30:
+            id_group = row['Id_Groupe']
+            date_generique = date_generication_groupe.loc[id_group]
             idx_date_generique = period.index(date_generique)
-            ymax = output_group[idx_date_generique]
-            ax.vlines(idx_date_generique, 0, ymax, color=colors[i], linestyles = '--')
+            ymax = row[idx_date_generique]
+            ax.vlines(idx_date_generique, 0, ymax, color=color_row, linestyles = '--')
             # pour afficher les chutes de brevets (à vérifier)
 
-        if write_on:
-            princeps = base_brute[(base_brute['Id_Groupe'] == value) & (base_brute['Type'] == 0)]
-            if len(princeps) != 0:
-                date_princeps = min(princeps['premiere_vente'])
+        if 'role' in sum_by or 'role' in color_by:
+            princeps = row['role']
+            if princeps:
+                date_princeps = row['premiere_vente']
                 #print(output_group.index)
                 idx_date_princeps = period.index(str(int(date_princeps)))
                 if idx_date_princeps < average_over / 2:
                     idx_date_princeps = average_over / 2
                 elif (len(period) - idx_date_princeps) < average_over / 2:
                     idx_date_princeps = len(period) - average_over / 2
-                output_date_princeps = output_group[idx_date_princeps]
-                info_str = str(princeps['Nom_Substance'].iloc[0]) + ' / ASMR : ' + str(princeps['Valeur_ASMR'].iloc[0])
+                date_princeps = period[idx_date_princeps]
+                output_date_princeps = row.loc[date_princeps]
+                info_str = str(row['Nom_Substance']) + ' / ASMR : ' + str(row['Valeur_ASMR'])
 
                 if not np.isnan(output_date_princeps):
                     ax.annotate(info_str, xytext=(idx_date_princeps, output_date_princeps),
-                                color=colors[i], xy=(0,0), annotation_clip = False)
-
-                    dates_princeps = princeps['premiere_vente']
-                    x = [period.index(str(int(date))) for date in dates_princeps]
-                    output_date_princeps = output_group[x]
-                    ax.scatter(dates_princeps, output_date_princeps,
-                                   marker='o', color=colors[i], s=100)
-
-        ####### Fin : Visualisation/ Somme sur les groupes
-        ###########################################################################
-        ####### Début : Visualisation/ Pas de somme sur les groupes
-        else:
-            for j in output_group.index:
-
-                #Mise en place de la légende
-                if write_on:
-                    b = tab.loc[tab[color_by] == value]
-                    label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
-                    ax.plot(output_group.loc[j,:], color = colors[i])
-                    date = b['premiere_vente'].iloc[j]
-                    if date > 0:
-                        date = str(int(date))
-                        x = period.index(date)
-                        if x < average_over/2:
-                            x = average_over/2
-                        a = float(output_group.loc[j, x])
-                        if np.isnan(a):
-                            a = -1
-                        xytext = (x, a)
-                #print type(output_group.loc[j, x+6])
-
-                    ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
-        ####### Fin : Visualisation/ Pas de somme sur les groupes
-        ###########################################################################
-
-        print i # i sert pour le choix de la couleur
-        i = i + 1
-#    if proportion == False and variations == False:
-#        plt.plot(sum_output, color='k', linestyle='-', linewidth=2.0, label='Total Classe')
-
-    plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=1)
-    ax.set_xticklabels([str(period[i]) for i in range(0, len(period)) if i%12 == 0])
-    ax.set_xticks([i for i in range(0, len(period)) if i%12 == 0])
+                                color=color_row, xy=(0,0), annotation_clip = False)
+                    ax.scatter(idx_date_princeps, output_date_princeps,
+                                   marker='o', color=color_row, s=100)
+#
+#        ####### Fin : Visualisation/ Somme sur les groupes
+#        ###########################################################################
+#        ####### Début : Visualisation/ Pas de somme sur les groupes
+#        else:
+#            for j in output_group.index:
+#
+#                #Mise en place de la légende
+#                if write_on:
+#                    b = tab.loc[tab[color_by] == value]
+#                    label = b['Nom'].iloc[j][:15]#On tronque pour garder 15 charactères
+#                    ax.plot(output_group.loc[j,:], color = colors[i])
+#                    date = b['premiere_vente'].iloc[j]
+#                    if date > 0:
+#                        date = str(int(date))
+#                        x = period.index(date)
+#                        if x < average_over/2:
+#                            x = average_over/2
+#                        a = float(output_group.loc[j, x])
+#                        if np.isnan(a):
+#                            a = -1
+#                        xytext = (x, a)
+#                #print type(output_group.loc[j, x+6])
+#
+#                    ax.annotate(str(label), xytext=xytext, xy=(0,0), color = colors[i], annotation_clip=False)
+#        ####### Fin : Visualisation/ Pas de somme sur les groupes
+#        ###########################################################################
+#
+#        print i # i sert pour le choix de la couleur
+#        i = i + 1
+##    if proportion == False and variations == False:
+##        plt.plot(sum_output, color='k', linestyle='-', linewidth=2.0, label='Total Classe')
+#
+#    plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=1)
+#    ax.set_xticklabels([str(period[i]) for i in range(0, len(period)) if i%12 == 0])
+#    ax.set_xticks([i for i in range(0, len(period)) if i%12 == 0])
     plt.show()
     ########### Fin : Visualisation
     ###############################################################################

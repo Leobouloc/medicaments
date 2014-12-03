@@ -25,23 +25,22 @@ def add_date_vente_observee(sniiram):
         premiere_vente[cond_prem] = month
         cond_dern = ~vente & premiere_vente.notnull() & derniere_vente.isnull()
         derniere_vente[cond_dern] = month - 1
-    
+
     # Ajout de la donnée première vente à la base Sniiram
     sniiram['premiere_vente'] = premiere_vente
     sniiram['derniere_vente'] = derniere_vente
     return sniiram
 
 
-def load_sniiram():
-#    path = os.path.join(path_sniiram, 'since200301.csv')
-    path = os.path.join(path_sniiram, 'PHARMA.csv')
+def load_sniiram(date=200301):
+    assert date in [200301, 201003, 201012]
+    path = os.path.join(path_sniiram, 'since' + str(date) + '.csv')
     table = pd.read_csv(path, sep=';')
     table.columns = ['cip13', 'date', 'nb']
     table['nb'] *= 97
     table['year'] = table['date'] // 100
     table['cip13'].fillna(1, inplace=True)
     table = table.pivot(index='cip13', columns='date', values='nb')
-    # TODO: redresser après 2011
     return add_date_vente_observee(table)
 
 def load_sniiram2():
@@ -53,8 +52,8 @@ def load_sniiram2():
     table.groupby(['date','caisse'])['nb'].sum()
     #ajout des nouvelles caisses :
     table.groupby(['date','caisse'])['nb'].sum().loc[201012] - table.groupby(['date','caisse'])['nb'].sum().loc[201010]
-    
-    
+
+
     def presta_unique(group):
         if group['typ_presta'].min() == group['typ_presta'].max():
             return group['typ_presta'].max()
@@ -66,7 +65,7 @@ def load_sniiram2():
     part = particular_cip
     test = table.groupby(['cip13']).apply(presta_unique)
     table.groupby(['date','caisse'])
-    
+
     table = table.pivot(index='cip13', columns='date', values='nb')
     #TODO: redresser après 2011
     return add_date_vente_observee(table)
