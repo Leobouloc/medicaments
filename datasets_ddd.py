@@ -83,9 +83,8 @@ def calcul_dj_par_presta(table, atc_ddd):
     table.loc[from_cnamts, 'dj_par_presta'] = table.loc[from_cnamts, :].apply(lambda ligne: calcul_ddd_ligne(ligne, atc_ddd, 'cnamts'), axis=1)
     # Calcul de la dj par presta pour les medicaments de medic gouv avec une seule substance
     cip_uniques = table.groupby('CIP7')['Code_Substance'].nunique() == 1
-    print cip_uniques
-    print table['CIP7']
-    print table['base_choisie']
+    
+    print 'dans le calcul de dj par presta'
     sel1 = table.apply(lambda ligne: (ligne['base_choisie'] == 'medic_gouv'), axis=1)
     sel2 = table.apply(lambda ligne: cip_uniques[ligne['CIP7']] , axis=1)
     sel2 = sel2.apply(lambda x: str(x).replace('[]', 'False')).apply(bool)

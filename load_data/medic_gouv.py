@@ -29,8 +29,8 @@ dico_variables = dict(
     COMPO_bdpm=['CIS', 'Element_Pharma', 'Code_Substance', 'Nom_Substance',
                 'Dosage', 'Ref_Dosage', 'Nature_Composant',
                 'Substance_Fraction'],
-    HAS_SMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date', 'Valeur_SMR', 'Libelle_SMR'],
-    HAS_ASMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date', 'Valeur_ASMR', 'Libelle_ASMR']
+    HAS_SMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date_SMR', 'Valeur_SMR', 'Libelle_SMR'],
+    HAS_ASMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date_ASMR', 'Valeur_ASMR', 'Libelle_ASMR']
     )
 
 unite_standard = ['ml', 'mg', 'litre']
@@ -253,87 +253,91 @@ def table_update(table):
                 reference_dose = 1
             # travail de base sur le label
             label = row['Label_presta']
-            if label.split()[0] in element_standard:
-                label = '1 ' + label
+            
+            if not isinstance(label, str):
+                nb_ref_in_label[i] = np.nan
+            else:
+                if label.split()[0] in element_standard:
+                    label = '1 ' + label
 
-            if reference in label:
-                # TODO: douteux quand la référence apparait plusieurs fois
-                label_dose = extract_quantity(label, reference)
-                nb_ref_in_label[i] = label_dose/reference_dose
-
-            if nb_ref_in_label[i] == 0:
-                for unite in ['ml', 'l', 'mg', 'g', 'dose', 'litre']:
-                    if len(reference) >= len(unite) + 1:
-                        if ' ' + unite + ' ' in reference or \
-                           reference[-(len(unite) + 1):] == ' ' + unite or \
-                           reference[:len(unite)] == unite :
-                            if ' ' + unite in label:
-                                nb_ref_in_label[i] = extract_quantity(label, ' ' + unite)/reference_dose
-
-            if nb_ref_in_label[i] == 0:
-                reference = row['Ref_Dosage']
-                contenant = [var for var in element_standard
-                             if var in reference]
-                if len(contenant) == 1:
-                    var = contenant[0]
-                    if var in label:
-                        label_dose = extract_quantity(label, var)
-                        nb_ref_in_label[i] = label_dose
-
-            if nb_ref_in_label[i] == 0:
-                reference = row['Ref_Dosage']
-                if reference in ['lyophilisat', '1 flacon', 'dose mesurée']:
-                    nb_ref_in_label[i] = extract_quantity(label, 'flacon')
-
-            if nb_ref_in_label[i] == 0:
-                reference = row['Ref_Dosage']
-                if ((any(masse in reference for masse in ['g', 'mg']) and
-                    any(vol in label for vol in ['l', 'ml'])) or
-                    (any(masse in label for masse in ['g', 'mg']) and
-                    any(vol in reference for vol in ['l', 'ml']))):
-                    incoherence_identifiee += [i]
-
-                elif reference == 'comprimé' and 'gélule' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'gélule')
-                elif 'qsp' in row['Dosage']:
-                    incoherence_identifiee += [i]
-                elif reference == 'pression':
-                    incoherence_identifiee += [i]
-                elif 'Bq' in label:  # GBq, MBq
-                    pass
-                elif 'Bq' in row['Dosage']:  # GBq, MBq
-                    pass
-                elif reference == 'dose':
-                    # TODO:
-                    pass
-                elif reference == 'sachet-dose' and 'sachet' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'sachet')
-                elif reference == 'flacon de lyophilisat' and 'flacon' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'flacon')
-                elif reference in ['ampoule ou flacon', 'flacon ou ampoule'] and 'flacon' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'flacon')
-                elif reference in ['ampoule ou flacon', 'flacon ou ampoule'] and 'ampoule' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'ampoule')
-                elif reference == 'ampoule de lyophilisat' and 'ampoule' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'ampoule')
-                elif reference == 'emplâtre' and 'sachet' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'sachet')
-                elif reference == 'dispositif cutané' and 'sachet' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'sachet')
-                elif reference == 'flacon' and 'récipient unidose' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'récipient')
-                elif reference == 'flacon' and 'ampoule' in label:
-                    nb_ref_in_label[i] = extract_quantity(label, 'ampoule')
-                elif reference == '1 ml de solution reconstituée':
-                    reconstitu += [i]
-                elif 'sachet-dose n' in reference:
-                    pass
-                    # TODO: un truc avec les sachets-doses numérotés
-                elif 'cm^2' in reference:
-                    pass
-                    # TODO: un truc avec les sachets-doses numérotés
-                else:
-                    pass
+                if reference in label:
+                    # TODO: douteux quand la référence apparait plusieurs fois
+                    label_dose = extract_quantity(label, reference)
+                    nb_ref_in_label[i] = label_dose/reference_dose
+    
+                if nb_ref_in_label[i] == 0:
+                    for unite in ['ml', 'l', 'mg', 'g', 'dose', 'litre']:
+                        if len(reference) >= len(unite) + 1:
+                            if ' ' + unite + ' ' in reference or \
+                               reference[-(len(unite) + 1):] == ' ' + unite or \
+                               reference[:len(unite)] == unite :
+                                if ' ' + unite in label:
+                                    nb_ref_in_label[i] = extract_quantity(label, ' ' + unite)/reference_dose
+    
+                if nb_ref_in_label[i] == 0:
+                    reference = row['Ref_Dosage']
+                    contenant = [var for var in element_standard
+                                 if var in reference]
+                    if len(contenant) == 1:
+                        var = contenant[0]
+                        if var in label:
+                            label_dose = extract_quantity(label, var)
+                            nb_ref_in_label[i] = label_dose
+    
+                if nb_ref_in_label[i] == 0:
+                    reference = row['Ref_Dosage']
+                    if reference in ['lyophilisat', '1 flacon', 'dose mesurée']:
+                        nb_ref_in_label[i] = extract_quantity(label, 'flacon')
+    
+                if nb_ref_in_label[i] == 0:
+                    reference = row['Ref_Dosage']
+                    if ((any(masse in reference for masse in ['g', 'mg']) and
+                        any(vol in label for vol in ['l', 'ml'])) or
+                        (any(masse in label for masse in ['g', 'mg']) and
+                        any(vol in reference for vol in ['l', 'ml']))):
+                        incoherence_identifiee += [i]
+    
+                    elif reference == 'comprimé' and 'gélule' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'gélule')
+                    elif 'qsp' in row['Dosage']:
+                        incoherence_identifiee += [i]
+                    elif reference == 'pression':
+                        incoherence_identifiee += [i]
+                    elif 'Bq' in label:  # GBq, MBq
+                        pass
+                    elif 'Bq' in row['Dosage']:  # GBq, MBq
+                        pass
+                    elif reference == 'dose':
+                        # TODO:
+                        pass
+                    elif reference == 'sachet-dose' and 'sachet' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'sachet')
+                    elif reference == 'flacon de lyophilisat' and 'flacon' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'flacon')
+                    elif reference in ['ampoule ou flacon', 'flacon ou ampoule'] and 'flacon' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'flacon')
+                    elif reference in ['ampoule ou flacon', 'flacon ou ampoule'] and 'ampoule' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'ampoule')
+                    elif reference == 'ampoule de lyophilisat' and 'ampoule' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'ampoule')
+                    elif reference == 'emplâtre' and 'sachet' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'sachet')
+                    elif reference == 'dispositif cutané' and 'sachet' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'sachet')
+                    elif reference == 'flacon' and 'récipient unidose' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'récipient')
+                    elif reference == 'flacon' and 'ampoule' in label:
+                        nb_ref_in_label[i] = extract_quantity(label, 'ampoule')
+                    elif reference == '1 ml de solution reconstituée':
+                        reconstitu += [i]
+                    elif 'sachet-dose n' in reference:
+                        pass
+                        # TODO: un truc avec les sachets-doses numérotés
+                    elif 'cm^2' in reference:
+                        pass
+                        # TODO: un truc avec les sachets-doses numérotés
+                    else:
+                        pass
     return nb_ref_in_label
 #            print('il faut tenter autre chose')
 #            print(row)
@@ -362,6 +366,8 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
                 #On ne selectionne que les médicaments pour lesquels on a un CIS sans lettres (normal)
                 tab=tab.loc[tab['CIS'].apply(lambda x: len(re.findall("[A-Za-z]", x)))==0,:]
                 tab['CIS'] = tab['CIS'].apply(lambda x: float(x))
+                if 'Date_ASMR' in vars:
+                    tab['Date_ASMR'] = tab['Date_ASMR'].apply(lambda x: dt.datetime.strptime(str(20140723), "%Y%m%d").date())
             tab = tab[['CIS'] + intersect]
             # correction ad-hoc...
             if tab['CIS'].dtype == 'object':
@@ -400,11 +406,12 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
 #            print('On retire ' + str(sum(output[var].isnull())) + " valeurs parce " +
 #                   "qu'il n'y a pas de date")
             sel = output[var].notnull()
-            output.loc[sel, var]  = output.loc[sel, var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
-            for time_idx in ['month', 'year']:
-                name = var + '_' + time_idx
-                output[name] = 0
-                output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
+            if var != 'Date_ASMR':
+                output.loc[sel, var]  = output.loc[sel, var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
+                for time_idx in ['month', 'year']:
+                    name = var + '_' + time_idx
+                    output[name] = 0
+                    output[name][output[var].notnull()] = output[var][output[var].notnull()].apply(lambda x: getattr(x, time_idx))
 
     if 'nb_ref_in_label_medic_gouv' in var_to_keep:
         output['nb_ref_in_label_medic_gouv'] = table_update(output)
@@ -431,7 +438,7 @@ if __name__ == '__main__':
                              'Libelle_ASMR', 'Type', 'Ref_Dosage', 'Dosage', 
                              'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                              'indic_droit_rembours', 'Statu_admin_presta',
-                             'Label_presta','Valeur_ASMR',
+                             'Label_presta','Valeur_ASMR', 'Date_ASMR',
                              'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
     table = load_medic_gouv(maj_bdm, info_utiles_from_gouv)
     # Test statine
@@ -445,3 +452,6 @@ if __name__ == '__main__':
     for var in ['Ref_Dosage', 'Dosage', 'Label_presta']:
         print table[var].isnull().sum()
         table = table[table[var].notnull()]
+
+
+#HAS_SMR_bdpm=['CIS', 'HAS', 'Evalu', 'Date', 'Valeur_SMR', 'Libelle_SMR']

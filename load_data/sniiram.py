@@ -36,7 +36,7 @@ def load_sniiram(date=200301):
     assert date in [200301, 201003, 201012]
     path = os.path.join(path_sniiram, 'since' + str(date) + '.csv')
     table = pd.read_csv(path, sep=';')
-    table.columns = ['cip13', 'date', 'nb']
+    table.columns = ['date', 'cip13', 'nb']
     table['nb'] *= 97
     table['year'] = table['date'] // 100
     table['cip13'].fillna(1, inplace=True)
