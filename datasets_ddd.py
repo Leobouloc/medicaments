@@ -128,7 +128,7 @@ if __name__ == '__main__':
     maj_gouv = 'maj_20140915122241'
     # parametres du calcul
     # Ne marche pas si la liste inclut 'CIS'
-    info_utiles_from_gouv = ['CIP7', 'CIP13', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+    info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
                              'Code_Substance', 'Nom_Substance', 'Libelle_ASMR', 'Type',
                              'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                              'indic_droit_rembours', 'Statu_admin_presta',

@@ -74,7 +74,7 @@ def dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
         assert not force
         # TODO: check we have dataset_brut.csv was generated with maj_gouv
         table = read_csv(file, sep=',')
-        vars_needed = [ x for x in (from_gouv + from_cnamts) if x != 'CIP13']
+        vars_needed = [ x for x in (from_gouv + from_cnamts)]
         for var in vars_needed:
             assert var in table.columns
         return table
@@ -89,7 +89,7 @@ def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
         assert not force
         # TODO: check we have dataset_brut.csv was generated with maj_gouv
         table = read_csv(file, sep=',')
-        vars_needed = [x for x in (from_gouv + from_cnamts) if x != 'CIP13']
+        vars_needed = [x for x in (from_gouv + from_cnamts)]
         for var in vars_needed:
             assert var in table.columns
         return table
@@ -101,7 +101,7 @@ def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
 
 
 if __name__ == '__main__':
-    info_utiles_from_gouv = ['CIP7', 'CIP13', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+    info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
                          'Code_Substance', 'Nom_Substance', 'Libelle_ASMR', 'Type',
                          'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                          'indic_droit_rembours', 'Statu_admin_presta',
