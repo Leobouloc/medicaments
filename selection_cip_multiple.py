@@ -6,7 +6,7 @@ Created on Thu Dec 04 10:37:16 2014
 """
    
 import math
-
+from pandas import Series
 
 def lambda_float(x):
     try:
@@ -41,19 +41,18 @@ def sel_by_dosage_value(table):
     return pd.Series(False, index = dosage.index)
     
 
-dos = dosage.str.split().str.get(0)
-dos = dos.apply(lambda_float)
+dose = dosage.str.split().str.get(0)
+dose = dose.apply(lambda_float)
 
-dose = dos[dos>0]
-power = dose.apply(lambda x: math.floor(math.log(x, 10)))
+max_power = int(math.floor(math.log(max(dose), 10)))
+min_power = int(math.floor(math.log(min(dose), 10)))
+power = Series(min_power - 1, index=dose.index)
+for i in range(min_power, max_power + 1):
+    divide = 10**(i)
+    cond = dose/divide == (dose/divide).apply(math.floor)
+    power[cond] = i
 
-table['power'] = range(len(table))
-for i in range(3):
-    cond = (10**i)*dose == (10**i)*dose.apply(round)
-    # Si on a une unique ligne pour laquelle le dosage est nul on renvoie 
-    table.loc[(cond) & table['power'] == 0, 'power'] = i
-        
-table['power'] = 0
+table['power'] = power
 
 table.groupby('CIP')['power'].min()
 
