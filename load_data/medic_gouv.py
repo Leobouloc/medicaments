@@ -432,7 +432,7 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
 #            print('On retire ' + str(sum(output[var].isnull())) + " valeurs parce " +
 #                   "qu'il n'y a pas de date")
             sel = output[var].notnull()
-            if var != 'Date_ASMR':
+            if var not in ['Date_ASMR', 'Date_SMR']:
                 output.loc[sel, var]  = output.loc[sel, var].map(lambda t : dt.datetime.strptime(t, "%d/%m/%Y").date())
                 for time_idx in ['month', 'year']:
                     name = var + '_' + time_idx
@@ -465,13 +465,11 @@ if __name__ == '__main__':
                              'Label_presta','Valeur_ASMR', 'Date_ASMR',
                              'Label_presta','Valeur_SMR', 'Date_SMR',
                              'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
-    test = table_SMR()
+#    test = table_SMR()
     
     table = load_medic_gouv(maj_bdm, info_utiles_from_gouv)
     # Test statine
-    cond = table['Nom_Substance'].str.contains('ATORVASTATINE')
-    statine = table[cond]
-    statine['CIP'].value_counts()    
+    
     
 
     table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
