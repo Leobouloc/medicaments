@@ -14,14 +14,15 @@ pd.set_option('max_colwidth', 100)
 
 from CONFIG import path_gouv
 # Derniere mise à jour BDM
-maj_bdm = 'maj_20140915122241'
+
+maj_bdm = 'maj_20140915122241' # maj_20141128
 
 
 dico_variables = dict(
     bdpm=['CIS', 'Nom', 'Forme', 'Voies', 'Statut_AMM', 'Type_AMM', 'Etat',
           'Date_AMM', 'Statut_BDM', 'Num_Europe', 'Titulaires', 'Surveillance'],
     CIP_bdpm=['CIS', 'CIP7', 'Label_presta', 'Statu_admin_presta',
-              'etat_commercialisation', 'Date_declar_commerc', 'CIP13',
+              'etat_commercialisation', 'Date_declar_commerc', 'CIP',
               'aggrement_collectivites', 'Taux_rembours', 'Prix',
               'indic_droit_rembours'],
     CPD_bdpm=['CIS', 'Prescription'],
@@ -86,7 +87,7 @@ def recode_prix(table):
     assert 'Prix' in table.columns
     table['Prix'] = table['Prix'].str.replace(',','.')
     #Enlever le premier point pour ceux qui en ont deux
-    table.loc[table['Prix'].apply(lambda x: x.count('.'))>1,'Prix'] = table.loc[table['Prix'].apply(lambda x: x.count('.'))>1,'Prix'].str.replace('.','',1)
+    table.loc[table['Prix'].apply(lambda x: x.count('.')) > 1,'Prix'] = table.loc[table['Prix'].apply(lambda x: x.count('.'))>1,'Prix'].str.replace('.','',1)
     table['Prix'] = table['Prix'].apply(lambda x: float(x))
     return table
 
@@ -343,6 +344,30 @@ def table_update(table):
 #            print(row)
 #            pdb.set_trace()
 
+def table_SMR(maj_bdm=maj_bdm):
+    def _load_data_SMR(name):
+        path = os.path.join(path_gouv, maj_bdm, 'CIS_HAS_' + name + '_bdpm.txt')
+        tab = pd.read_table(path, header=None)
+        tab.columns = dico_variables['HAS_SMR_bdpm']
+#        tab.drop(['HAS','Libelle_SMR'], axis=1, inplace=True)
+        return tab
+
+    tab1 = _load_data_SMR('SMR')
+    tab2 = _load_data_SMR('ASMR')
+    dico_rename = dict(I='Majeur',
+                       II='Important',
+                       III='Modéré',
+                       IV='Mineur',
+                       V='Inexistant')
+
+    print dico_rename
+    tab2['Valeur_SMR'].replace(dico_rename, inplace=True)
+    test = tab1.merge(tab2, on=['CIS','Date_SMR'])
+    tab1[(tab1['CIS'] == '60529136')]
+    import pdb
+    pdb.set_trace()
+
+
 
 def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
     ''' renvoie les tables fusionnées issues medicament.gouv.fr
@@ -364,10 +389,11 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
             tab.columns = vars
             if name in ['HAS_ASMR_bdpm','HAS_SMR_bdpm']:
                 #On ne selectionne que les médicaments pour lesquels on a un CIS sans lettres (normal)
-                tab=tab.loc[tab['CIS'].apply(lambda x: len(re.findall("[A-Za-z]", x)))==0,:]
+                tab = tab.loc[tab['CIS'].apply(lambda x: len(re.findall("[A-Za-z]", x)))==0,:]
                 tab['CIS'] = tab['CIS'].apply(lambda x: float(x))
                 if 'Date_ASMR' in vars:
-                    tab['Date_ASMR'] = tab['Date_ASMR'].apply(lambda x: dt.datetime.strptime(str(20140723), "%Y%m%d").date())
+                    tab['Date_ASMR'] = tab['Date_ASMR'].apply(lambda x: dt.datetime.strptime(str(x), "%Y%m%d").date())
+                # max ASMR = 13
             tab = tab[['CIS'] + intersect]
             # correction ad-hoc...
             if tab['CIS'].dtype == 'object':
@@ -395,8 +421,8 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
                 output = output.merge(tab, how='outer', on='CIS',
                                       suffixes=('', name[:-4]))
                 if CIP_not_null:
-                    if 'CIP13' in output.columns:
-                        output = output[output['CIP13'].notnull()]
+                    if 'CIP' in output.columns:
+                        output = output[output['CIP'].notnull()]
                 print("après la fusion avec " + name + " la base mesure " +
                       str(len(output)))
 
@@ -417,8 +443,6 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
         output['nb_ref_in_label_medic_gouv'] = table_update(output)
 #    if 'mode_prise' in var_to_keep:
 #        output['mode_prise'] = mode_prise(output)   
-
-    output.rename(columns={'CIP13': 'CIP'}, inplace=True)
     
     return output
 
@@ -432,21 +456,24 @@ if __name__ == '__main__':
 #                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
 #                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
 
-    info_utiles_from_gouv = ['CIP7', 'CIP13', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+    info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
                              'Element_Pharma', 'Code_Substance', 'Nom_Substance', 
                              'Nature_Composant', 'Substance_Fraction',
                              'Libelle_ASMR', 'Type', 'Ref_Dosage', 'Dosage', 
                              'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                              'indic_droit_rembours', 'Statu_admin_presta',
                              'Label_presta','Valeur_ASMR', 'Date_ASMR',
+                             'Label_presta','Valeur_SMR', 'Date_SMR',
                              'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
+    test = table_SMR()
+    
     table = load_medic_gouv(maj_bdm, info_utiles_from_gouv)
     # Test statine
     cond = table['Nom_Substance'].str.contains('ATORVASTATINE')
     statine = table[cond]
     statine['CIP'].value_counts()    
     
-    
+
     table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
 
     for var in ['Ref_Dosage', 'Dosage', 'Label_presta']:
