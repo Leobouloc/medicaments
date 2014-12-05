@@ -127,7 +127,8 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
         table['unites_par_boite_cnamts'] = table['unites_par_boite_cnamts'].apply(get_dose)
     if 'CODE_ATC' in info_utiles:
         table['CODE_ATC_4'] = table['CODE_ATC'].apply(atc_4_lambda)    
-
+    if 'CIP' in info_utiles:
+        table['CIP'] = table['CIP'].astype(str)
     return table
 
 

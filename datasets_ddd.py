@@ -10,6 +10,7 @@ import re
 import numpy as np
 import pandas as pd
 from pandas import read_csv
+from numpy import int64
 
 from CONFIG import working_path
 
@@ -117,6 +118,7 @@ def dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
         vars_needed = [x for x in (from_gouv + from_cnamts + from_ddd) if x not in not_saved]
         for var in vars_needed:
             assert var in table.columns
+        table['CIP'] = table['CIP'].astype(int64).astype(str)
         return table
     except:
         table = create_dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force)

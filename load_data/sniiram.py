@@ -7,6 +7,7 @@ Created on 26 juin 2014
 import pandas as pd
 import os
 from pdb import set_trace
+from numpy import int64
 
 from CONFIG import path_sniiram
 
@@ -36,11 +37,13 @@ def load_sniiram(date=200301):
     assert date in [200301, 201003, 201012]
     path = os.path.join(path_sniiram, 'since' + str(date) + '.csv')
     table = pd.read_csv(path, sep=';')
-    table.columns = ['date', 'cip13', 'nb']
+    table.columns = ['date', 'CIP', 'nb']
+    table['CIP'].fillna(1, inplace=True)
+    table['CIP'] = table['CIP'].astype(int64).astype(str)
+        
     table['nb'] *= 97
     table['year'] = table['date'] // 100
-    table['cip13'].fillna(1, inplace=True)
-    table = table.pivot(index='cip13', columns='date', values='nb')
+    table = table.pivot(index='CIP', columns='date', values='nb')
     return add_date_vente_observee(table)
 
 def load_sniiram2():

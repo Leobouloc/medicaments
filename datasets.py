@@ -9,6 +9,7 @@ import os
 import re
 import numpy as np
 from pandas import read_csv
+from numpy import int64
 
 from CONFIG import working_path
 
@@ -77,6 +78,7 @@ def dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
         vars_needed = [ x for x in (from_gouv + from_cnamts)]
         for var in vars_needed:
             assert var in table.columns
+        table['CIP'] = table['CIP'].astype(int64).astype(str)
         return table
     except:
         table = create_dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
@@ -92,6 +94,7 @@ def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
         vars_needed = [x for x in (from_gouv + from_cnamts)]
         for var in vars_needed:
             assert var in table.columns
+        table['CIP'] = table['CIP'].astype(int64).astype(str)
         return table
     except:
         print('on refait la table dataset_plus')
@@ -109,6 +112,6 @@ if __name__ == '__main__':
                          'nb_ref_in_label_medic_gouv', 'Prescription',
                          'premiere_vente', 'derniere_vente']
     info_utiles_from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA', 'UNITE_SA', 'NB_UNITES'] #LABO
-    test = dataset_plus(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts, force=True)
+    test = dataset_brut(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts, force=True)
     import pdb
     pdb.set_trace()

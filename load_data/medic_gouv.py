@@ -403,7 +403,9 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
                 problemes = problemes | tab['CIS'].isin(['I6049513', 'inc     '])
                 tab = tab.loc[~problemes, :]
                 tab['CIS'].astype(int)
-
+                
+            if 'CIP' in intersect:
+                tab['CIP'] = tab['CIP'].astype(str)
             if 'Ref_Dosage' in intersect:
                 tab = recode_ref_dosage(tab)
             if 'Dosage' in intersect:
