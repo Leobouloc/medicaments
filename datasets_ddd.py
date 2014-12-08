@@ -95,20 +95,22 @@ def calcul_dj_par_presta(table, atc_ddd):
     return table
 
 
-def create_dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
+def create_dataset_ddd(from_gouv, maj_gouv, from_cnamts, force=False):
     table = dataset_plus(from_gouv, maj_gouv, from_cnamts, force)
-    ddd = load_atc_ddd(from_ddd)
+    ddd = load_atc_ddd()
     print (' avant séléction par Id_Groupe :' + str(len(table)))
 #     table = table.loc[table['Id_Groupe'].notnull(), :]
+    
     print (' après séléction par Id_Groupe :' + str(len(table)))
     table = choix_de_la_base(table)
     print (' après choix de la base :' + str(len(table)))
     table = calcul_dj_par_presta(table, ddd)
+    
     print (' après calcul dj :' + str(len(table)))
     return table
 
 
-def dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
+def dataset_ddd(from_gouv, maj_gouv, from_cnamts, force=False):
     file = os.path.join(working_path, 'dataset_ddd.csv')
     try:
         assert not force
@@ -121,7 +123,7 @@ def dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force=False):
         table['CIP'] = table['CIP'].astype(int64).astype(str)
         return table
     except:
-        table = create_dataset_ddd(from_ddd, from_gouv, maj_gouv, from_cnamts, force)
+        table = create_dataset_ddd(from_gouv, maj_gouv, from_cnamts, force)
         table.to_csv(file, sep=',', index = False)
         return table
 
@@ -139,8 +141,8 @@ if __name__ == '__main__':
     from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA',
                                'UNITE_SA', 'NB_UNITES'] #LABO
     
-    from_atc_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
+    from_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
     
 
 #    test = dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
-    test2 = create_dataset_ddd(from_atc_ddd, from_gouv, maj_gouv, from_cnamts)
+    test2 = create_dataset_ddd(from_gouv, maj_gouv, from_cnamts)
