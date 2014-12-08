@@ -130,17 +130,17 @@ if __name__ == '__main__':
     maj_gouv = 'maj_20140915122241'
     # parametres du calcul
     # Ne marche pas si la liste inclut 'CIS'
-    info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+    from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
                              'Code_Substance', 'Nom_Substance', 'Libelle_ASMR', 'Type',
                              'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                              'indic_droit_rembours', 'Statu_admin_presta',
                              'Ref_Dosage', 'Dosage', 'Label_presta','Valeur_ASMR',
                              'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
-    info_utiles_from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA',
+    from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA',
                                'UNITE_SA', 'NB_UNITES'] #LABO
     
-    info_utiles_from_atc_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
+    from_atc_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
     
 
 #    test = dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
-    test2 = create_dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
+    test2 = create_dataset_ddd(from_atc_ddd, from_gouv, maj_gouv, from_cnamts)
