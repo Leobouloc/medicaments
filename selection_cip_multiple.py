@@ -41,20 +41,20 @@ def sel_by_dosage_value(table):
     return pd.Series(False, index = dosage.index)
     
 
-dose = dosage.str.split().str.get(0)
-dose = dose.apply(lambda_float)
-
-max_power = int(math.floor(math.log(max(dose), 10)))
-min_power = int(math.floor(math.log(min(dose), 10)))
-power = Series(min_power - 1, index=dose.index)
-for i in range(min_power, max_power + 1):
-    divide = 10**(i)
-    cond = dose/divide == (dose/divide).apply(math.floor)
-    power[cond] = i
-
-table['power'] = power
-
-table.groupby('CIP')['power'].min()
+#dose = dosage.str.split().str.get(0)
+#dose = dose.apply(lambda_float)
+#
+#max_power = int(math.floor(math.log(max(dose), 10)))
+#min_power = int(math.floor(math.log(min(dose), 10)))
+#power = Series(min_power - 1, index=dose.index)
+#for i in range(min_power, max_power + 1):
+#    divide = 10**(i)
+#    cond = dose/divide == (dose/divide).apply(math.floor)
+#    power[cond] = i
+#
+#table['power'] = power
+#
+#table.groupby('CIP')['power'].min()
 
 
 
