@@ -105,8 +105,12 @@ def create_dataset_ddd(from_gouv, maj_gouv, from_cnamts, force=False):
     table = choix_de_la_base(table)
     print (' après choix de la base :' + str(len(table)))
     table = calcul_dj_par_presta(table, ddd)
-    
     print (' après calcul dj :' + str(len(table)))
+    # => on a une seule substance par code ATC
+    assert ddd.groupby(['CODE_ATC'])['CHEMICAL_SUBSTANCE'].nunique().max()
+    ddd = ddd[ddd['CHEMICAL_SUBSTANCE'].notnull()]
+    ddd = ddd.groupby(['CODE_ATC']).first().reset_index()
+    table = table.merge(ddd, how='left')
     return table
 
 
@@ -140,7 +144,6 @@ if __name__ == '__main__':
                              'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
     from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA',
                                'UNITE_SA', 'NB_UNITES'] #LABO
-    
     from_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
     
 
