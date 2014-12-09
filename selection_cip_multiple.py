@@ -6,7 +6,8 @@ Created on Thu Dec 04 10:37:16 2014
 """
    
 import math
-from pandas import Series
+import pandas as pd
+import numpy as np
 
 def lambda_float(x):
     try:

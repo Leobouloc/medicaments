@@ -19,10 +19,12 @@ def load_cnamts_prix_harmonise(force=False):
     try:
         assert not force
         table = pd.read_csv(file, sep=',')
+        table['CIP'] = table['CIP'].astype(str)
         return table
     except:
         table = load_cnamts_prix()
         table.to_csv(file, sep=',')
+        table['CIP'] = table['CIP'].astype(str)
         return table
 
 #Creation de la base harmonisée

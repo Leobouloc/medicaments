@@ -44,7 +44,7 @@ def load_sniiram(date=200301):
     table['nb'] *= 97
     table['year'] = table['date'] // 100
     table = table.pivot(index='CIP', columns='date', values='nb')
-    return add_date_vente_observee(table)
+    return add_date_vente_observee(table) 
 
 def load_sniiram2():
     table = pd.read_csv(path_sniiram + 'PHARMA2.csv', sep=';')
@@ -74,7 +74,7 @@ def load_sniiram2():
     return add_date_vente_observee(table)
 
 if __name__ == '__main__':
-    table = load_sniiram()
+    test = load_sniiram()
     #set_trace()
 #    print(table.loc[ table['cip13'] == 3400934917547].groupby('year').sum())
 #    table.set_index('cip13', inplace=True)

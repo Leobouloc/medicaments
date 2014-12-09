@@ -125,10 +125,12 @@ def dataset_ddd(from_gouv, maj_gouv, from_cnamts, force=False):
         for var in vars_needed:
             assert var in table.columns
         table['CIP'] = table['CIP'].astype(int64).astype(str)
+        table.columns = [str(x) for x in table.columns]
         return table
     except:
         table = create_dataset_ddd(from_gouv, maj_gouv, from_cnamts, force)
         table.to_csv(file, sep=',', index = False)
+        table.columns = [str(x) for x in table.columns]
         return table
 
 

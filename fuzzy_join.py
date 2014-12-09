@@ -17,7 +17,7 @@ def fuzzy_join(left_table, right_table):
     right_substances = right_table_small['CHEMICAL_SUBSTANCE'].str.upper()
     
     
-    if len(right_substances) != 1:
+    if (len(right_substances) != 1) | left_substances.isnull().any():
         return pd.Series(False, index = left_table.index)
 
     else:
