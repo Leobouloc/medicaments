@@ -16,11 +16,9 @@ from CONFIG import working_path
 
 from choix_de_la_base import choix_de_la_base
 from load_data.atc_ddd import load_atc_ddd
+from datasets import dataset_plus
 
 maj_gouv = 'maj_20140915122241'
-
-from datasets import dataset_brut
-from datasets import dataset_plus
 
 
 def calcul_ddd_ligne(ligne, atc_ddd, base_source):
@@ -28,16 +26,16 @@ def calcul_ddd_ligne(ligne, atc_ddd, base_source):
     code_atc = ligne['CODE_ATC']
     selector = atc_ddd['CODE_ATC'] == str(code_atc)
     atc_ddd_restreint = atc_ddd.loc[selector, :]
-    
+
     if len(atc_ddd_restreint) == 0:
         return np.nan
-    
+
     nunique_code_atc = sum(selector)
     '''On vérifie que le dosage est bien au format nombre unité'''
     if base_source == 'cnamts':
         dosage = ligne['DOSAGE_SA']
         unite = str(ligne['UNITE_SA'])
-        nb_unites = ligne['NB_UNITES']        
+        nb_unites = ligne['NB_UNITES']
     if base_source == 'medic_gouv':
         try: # avoid
             dosage_list = ligne['Dosage'].split()
@@ -84,7 +82,7 @@ def calcul_dj_par_presta(table, atc_ddd):
     table.loc[from_cnamts, 'dj_par_presta'] = table.loc[from_cnamts, :].apply(lambda ligne: calcul_ddd_ligne(ligne, atc_ddd, 'cnamts'), axis=1)
     # Calcul de la dj par presta pour les medicaments de medic gouv avec une seule substance
     cip_uniques = table.groupby('CIP7')['Code_Substance'].nunique() == 1
-    
+
     print 'dans le calcul de dj par presta'
     sel1 = table.apply(lambda ligne: (ligne['base_choisie'] == 'medic_gouv'), axis=1)
     sel2 = table.apply(lambda ligne: cip_uniques[ligne['CIP7']] , axis=1)
@@ -100,7 +98,7 @@ def create_dataset_ddd(from_gouv, maj_gouv, from_cnamts, force=False):
     ddd = load_atc_ddd()
     print (' avant séléction par Id_Groupe :' + str(len(table)))
 #     table = table.loc[table['Id_Groupe'].notnull(), :]
-    
+
     print (' après séléction par Id_Groupe :' + str(len(table)))
     table = choix_de_la_base(table)
     print (' après choix de la base :' + str(len(table)))
@@ -145,7 +143,7 @@ if __name__ == '__main__':
     from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA',
                                'UNITE_SA', 'NB_UNITES'] #LABO
     from_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
-    
+
 
 #    test = dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
     test2 = create_dataset_ddd(from_gouv, maj_gouv, from_cnamts)
