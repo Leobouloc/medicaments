@@ -88,21 +88,7 @@ def selection_substance(table):
     selector_seule_base.fillna(False, inplace = True)
     selector_seule_base = selector_seule_base[selector_seule_base]
     table['une_seule_base'] = table['CIP'].isin(selector_seule_base.index)
-#    selector_seule_base = pd.DataFrame(selector_seule_base)
-#    selector_seule_base.columns = ['une_seule_base']
-#    table = table.merge(selector_seule_base, left_on = 'CIP', right_index = True, how = 'left')
     selector_is_Base = selector_substance_base & (table['une_seule_base'])
-
-
-    ### ATTENTION : le selectionneur par SA n'est pas correct
-##   Selecteur : On regarde s'il y a une unique SA pour le CIP
-#    selector_SA_defini = table.groupby('CIP')['Nature_Composant'].apply(lambda x: (sum(x == 'SA') == 1) & x.notnull().all())
-#    selector_SA_defini = selector_sa_defini[selector_sa_defini]
-#    table['SA_defini'] = table['CIP'].isin(selector_SA_defini.index)
-##    selector_SA_defini = pd.DataFrame(selector_SA_defini)
-##    selector_SA_defini.columns = ['SA_defini']
-##    table = table.merge(selector_SA_defini, left_on = 'CIP', right_index = True, how = 'left')
-#    selector_is_SA = table['SA_defini'] & (table['Nature_Composant'] == 'SA')
 
     # On fait l'union des selecteurs
     selector = (table['nb_CIP'] == 1) | selector_is_Base #| selector_is_SA
@@ -111,18 +97,13 @@ def selection_substance(table):
     assert table.loc[selector, 'CIP'].value_counts().max() == 1
 
 
-     ###############################################################
+     #######################################################################
      ##### ETAPE 2
 
-#    # On selectionne les lignes à éliminer car le CIP est déjà dedans
+    # On selectionne les lignes à éliminer car le CIP est déjà dedans
     table['cip_sel'] = table['CIP'].isin(table.loc[selector, 'CIP']) # True si le CIP est déjà dedans
     cip_sel = table['cip_sel']
 
-
-    # table = table.merge(cip_sel, left_on = 'CIP', right_index = True, how = 'left')
-    # table['cip_sel'] = table['cip_sel'].fillna(False)
-    # TODO: mettre pivot table pour conserver tous les changements de dates d'ASMR
-    # On choisit les CIP qui n'ont pas été selectionné
     tab_copy = table[~cip_sel]
 
     # On selectionne les médicaments qui ont un dosage rond
@@ -141,22 +122,45 @@ def selection_substance(table):
     print table[selector].groupby('CIP').apply(len).value_counts()
 
 
-     ###############################################################
+     #######################################################################
      ##### ETAPE 3
 
-#    # On selectionne les lignes à éliminer car le CIP est déjà dedans
+    # On selectionne les lignes à éliminer car le CIP est déjà dedans
     cip_sel = table['CIP'].isin(table.loc[selector, 'CIP']) # True si le CIP est déjà dedans
     # On choisit les CIP qui n'ont pas été selectionné
     tab_copy = table[~cip_sel]
 
     # On selectionne les médicaments dont le Code_substance est proche
     # en retirant les voyelles
-    voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
-    substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
-    substances = tab_copy['Nom_Substance']    
-    for voy in voyelles:
-        substance_ddd = substance_ddd.str.replace(voy, '')
-        substances = substances.str.replace(voy, '')
+    
+    method = 1
+    
+    if method == 1:
+        voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
+        substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
+        substances = tab_copy['Nom_Substance']    
+        for voy in voyelles:
+            substance_ddd = substance_ddd.str.replace(voy, '')
+            substances = substances.str.replace(voy, '')
+            
+    if method == 2:
+        voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', '\xca', 'Ê']
+        substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
+        substances = tab_copy['Nom_Substance']
+        substances = substances.str.replace(' DE ', ' ')
+        substances = substances.str.replace(" D'", ' ')
+        for voy in voyelles:
+            substance_ddd = substance_ddd.str.replace(voy, '')
+            substances = substances.str.replace(voy, '')
+        
+        def lambda_set_or_nan(x):
+            if isinstance(x, list):
+                return set(x)
+            else:
+                return np.nan
+        
+        substance_ddd = substance_ddd.str.split().apply(lambda_set_or_nan)
+        substances = substances.str.split().apply(lambda_set_or_nan)
         
     tab_copy['substance_of_ddd'] = substances == substance_ddd
     tab = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 1)
@@ -167,26 +171,13 @@ def selection_substance(table):
     
     print "normalement, la seule valeur est 1: " + str(table[table['select_by_subst_match']].groupby('CIP').apply(len).value_counts())
 
-    # TODO: inspecter pourquoi parfois il n'y a pas de match 
-#    assert len(tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) > 1)) == 0
-#    test = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 0)
-
-
-#    h2 = tab_copy.groupby('CIP').apply(lambda x: fuzzy_join(x, atc_ddd))
-#    h2 = h2.reset_index() # h[0] correspond au fait d'être selectionné (T/F), et h['level_1'] est l'index du médicament
-#    print 'les deux valeurs doivent être égales : ' + str(h2[0].sum()) + ' et ' + str(h2.loc[h2[0], 'CIP'].nunique())
-#    assert h2[0].sum() == h2.loc[h2[0], 'CIP'].nunique()    
-#    table['same_subst'] = False
-#    indexes = h2.loc[h2[0], 'level_1']
-#    table.loc[indexes, 'same_subst'] = True
-
     print "La selection 'fuzzy_join' ajoute : " + str(table['select_by_subst_match'].sum()) + ' médicaments uniques'
 
     selector = selector | table['select_by_subst_match']
     print "A l'étape 3), on a : "
     print table[selector].groupby('CIP').apply(len).value_counts()
 
-    ###################################################################
+    #######################################################################
 
     # Var veut dire variation (i.e. il y a plusieurs valeurs possibles)
     var_in_substance = (tab_copy.groupby('CIP')['Code_Substance'].apply(lambda x: x.nunique()) > 1) & tab_copy.groupby('CIP')['Code_Substance'].apply(lambda x: x.notnull().all())
@@ -198,14 +189,6 @@ def selection_substance(table):
     var_in_ASMR = var_in_ASMR[var_in_ASMR]
     tab_copy['var_in_ASMR'] = tab_copy['CIP'].isin(var_in_ASMR.index)
 
-#    var_in_ASMR = pd.DataFrame(var_in_ASMR)
-#    var_in_ASMR.columns = ['var_in_ASMR']
-
-
-
-#    tab_copy = tab_copy.merge(var_in_substance, left_on = 'CIP', right_index = True, how = 'left')
-#    tab_copy = tab_copy.merge(var_in_ASMR, left_on = 'CIP', right_index = True, how = 'left')
-
     print 'xxxxxxxxxxxxxxx'
     print 'Variations dans la substance'
     print tab_copy['var_in_substance'].value_counts()
@@ -214,27 +197,9 @@ def selection_substance(table):
     print tab_copy['var_in_ASMR'].value_counts()
     print 'zzzzzzzzzzzzzz'
 
-#    selector_ASMR = tab_copy[~tab_copy['var_in_substance'] & tab_copy['var_in_ASMR']].groupby('CIP').apply(first_largest_asmr).reset_index()
-#    selector_ASMR = pd.DataFrame(selector_ASMR['Valeur_ASMR'], index = list(selector_ASMR['CIP']), columns = ['selector_ASMR'])
-#    selector_ASMR.columns = ['selector_ASMR']
-#    table = table.merge(selector_ASMR, left_on = 'CIP', right_index = True, how = 'left')
-#    table['selector_ASMR'].fillna(False, inplace = True)
-#    selector_ASMR = table['selector_ASMR']
-#
-#    # TODO: Ca ne marche pas !!!
-#    print selector_ASMR
-#    print selector_ASMR.value_counts()
-#    print selector
-#
-#    selector = selector | selector_ASMR
-
-
-#    table = table.drop('nb_CIP', axis = 1)
-#    table = table.drop('nb_substances', axis = 1)
-
     table['selector'] = selector
 
-    ################################################################################
+    ######################################################################
 
     medicaments_par_classe_avt = table.groupby('CODE_ATC_4')['CIP'].nunique()
     boites_vendues_par_classe_avt = table.groupby('CODE_ATC_4')[period].sum().sum(axis=1)
@@ -251,7 +216,7 @@ def selection_substance(table):
     classes_a_conserver = pd.DataFrame(classes_a_conserver, columns = ['classe_a_conserver'])
 
     ######## Fin : filtrage pour les classes assez complètes
-    ##################################################
+    ######################################################################
 
 
     table = table.merge(classes_a_conserver, left_on = 'CODE_ATC_4', right_index = True, how = 'left')
