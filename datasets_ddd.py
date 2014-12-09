@@ -121,7 +121,7 @@ def dataset_ddd(from_gouv, maj_gouv, from_cnamts, force=False):
         # TODO: check we have dataset_brut.csv was generated with maj_gouv
         table = read_csv(file, sep=',')
         not_saved = ['CIP13', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
-        vars_needed = [x for x in (from_gouv + from_cnamts + from_ddd) if x not in not_saved]
+        vars_needed = [x for x in (from_gouv + from_cnamts) if x not in not_saved]
         for var in vars_needed:
             assert var in table.columns
         table['CIP'] = table['CIP'].astype(int64).astype(str)
