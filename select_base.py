@@ -12,6 +12,7 @@ import pandas as pd
 from exploitation_sniiram import get_base_brute
 from fuzzy_join import fuzzy_join
 from load_data.atc_ddd import load_atc_ddd
+from outils import all_periods
 
 
 def lambda_float(x):
@@ -20,6 +21,7 @@ def lambda_float(x):
     except:
         return np.nan
         
+
         
 def sel_by_dosage_value(table):
     '''Sensé selectionner les CIP dont les dosages sont des nombres ronds '''
@@ -48,12 +50,20 @@ def sel_by_dosage_value(table):
     return pd.Series(False, index = dosage.index)
 
 
-def selection(table):
 
+def selection_ASMR(table):
+    ''' choisit une seule ASMR par CIP, pour ne pas avoir de doublon '''
+    # TODO:
+    table['Nom_Substance'].fillna('inconnu', inplace=True)
+    return table.groupby(['CIP','Nom_Substance']).first().reset_index()
+
+def selection_substance(table):
     '''Ajoute les champs selector et classe_a_conserver dans base_brute'''
     '''selector dépend des criteres choisis'''
     '''classe_a_conserver montre les classes qui sont assez complètes après selector'''
 
+    period = all_periods(table)[0]
+    
     # Calcul du nombre de lignes pour chaque CIP
     nb_CIP = table.groupby('CIP').apply(len)
     nb_CIP = pd.DataFrame(nb_CIP, columns = ['nb_CIP'])
@@ -65,11 +75,11 @@ def selection(table):
     nb_substances.columns = ['nb_substances'] # Il y a un bug à cause de l'attribut name de la série
     table = pd.merge(table, nb_substances, left_on = 'CIP', right_index = True, how = 'left')
 
-#    On regarde si le nom de substance contient le mot Base et si celui çi est unique pour le CIP
-#   Selecteur : On sélectionne les médicaments définis comme "de base"
+    # On regarde si le nom de substance contient le mot Base et si celui çi est unique pour le CIP
+    # Selecteur : On sélectionne les médicaments définis comme "de base"
     selector_substance_base = table['Nom_Substance'].str.contains(' BASE')
     selector_substance_base.fillna(False, inplace = True)
-#   Selecteur : On compte qu'il n'y a qu'un seul "de base" pour un un unique CIP
+    # Selecteur : On compte qu'il n'y a qu'un seul "de base" pour un un unique CIP
 
 
     selector_seule_base = (table[selector_substance_base].groupby('CIP').apply(len) == 1) & table[selector_substance_base].groupby('CIP')['Nom_Substance'].apply(lambda x: x.notnull().all())
@@ -117,6 +127,7 @@ def selection(table):
     h = tab_copy.groupby('CIP').apply(sel_by_dosage_value)
     h = h.reset_index() # h[0] est True si la ligne est selectionnée
     print 'les deux valeurs doivent être égales : ' + str(h[0].sum()) + ' et ' + str(h.loc[h[0], 'CIP'].nunique())
+    assert h[0].sum() == h.loc[h[0], 'CIP'].nunique()
     table['cip_rond'] = False
     indexes = h.loc[h[0], 'level_1'] # h[0] correspond au fait d'être selectionné (T/F), et h['level_1'] est l'index du médicament
     table.loc[indexes, 'cip_rond'] = True
@@ -138,12 +149,28 @@ def selection(table):
     tab_copy = table[~cip_sel]
 
     # On selectionne les médicaments dont le Code_substance est proche
+    # en retirant les voyelles
+    voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
+    substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
+    substance = tab_copy['Nom_Substance']    
+    for voy in voyelles:
+        substances_ddd = substance_ddd.str.replace(voy, '')
+        substance = substance.replace(voy, '')
+        
+    tab_copy['substance_of_ddd'] = substance == substances_ddd
+    une_seule_substance_dans_base = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 1)
+    tab =  une_seule_substance_dans_base
+    selector_substance_ddd = tab[tab['substance_of_ddd']].index
 
-    atc_ddd = load_atc_ddd(brut=True)
+    # TODO: inspecter pourquoi parfois il n'y a pas de match 
+    assert len(tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) > 1)) == 0
+    test = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 0)
+
 
     h2 = tab_copy.groupby('CIP').apply(lambda x: fuzzy_join(x, atc_ddd))
     h2 = h2.reset_index() # h[0] correspond au fait d'être selectionné (T/F), et h['level_1'] est l'index du médicament
     print 'les deux valeurs doivent être égales : ' + str(h2[0].sum()) + ' et ' + str(h2.loc[h2[0], 'CIP'].nunique())
+    assert h2[0].sum() == h2.loc[h2[0], 'CIP'].nunique()    
     table['same_subst'] = False
     indexes = h2.loc[h2[0], 'level_1']
     table.loc[indexes, 'same_subst'] = True
@@ -231,4 +258,5 @@ def selection(table):
 
 if __name__ == '__main__':
     base_brute = get_base_brute()
-    test = selection(base_brute)
+    base_ASMR = selection_ASMR(base_brute)
+    test = selection_substance(base_ASMR)

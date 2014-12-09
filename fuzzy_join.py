@@ -5,10 +5,10 @@ Created on Mon Dec 08 17:02:52 2014
 @author: work
 """
 
+import pandas as pd
 voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
 
 def fuzzy_join(left_table, right_table):
-    import pandas as pd
     '''la table de gauche doit être un groupe de même CIP'''
     '''celle de droite est atc_ddd'''
     left_substances = pd.Series(left_table['Nom_Substance'].unique())
@@ -35,3 +35,16 @@ def fuzzy_join(left_table, right_table):
             
         else:
             return pd.Series(False, index = left_table.index)
+
+
+def fuzzy_join_bis(table):
+    '''la table de gauche doit être un groupe de même CIP'''
+    '''celle de droite est atc_ddd'''
+    substance_ddd = table['CHEMICAL_SUBSTANCE'].str.upper()
+    substance = table['Nom_Substance']
+    
+    for voy in voyelles:
+        substances_ddd = substance_ddd.str.replace(voy, '')
+        substance = substance.replace(voy, '')
+            
+    select_by_subst_name = substances == substances_ddd
