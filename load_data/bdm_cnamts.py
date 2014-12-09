@@ -105,11 +105,6 @@ def get_dose(obj):
     except ValueError:
         return None
 
-def atc_4_lambda(x):
-    try:
-        return x[:5]
-    except:
-        return np.nan
 
 def bdm_cnamts(info_utiles, unites_par_boite=True):
     ''' charge les info_utiles et crée la variable unites_par_boite '''
@@ -126,7 +121,7 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
         table['unites_par_boite_cnamts'] = table_entiere['NB_UNITES'].str.replace(',', '.')
         table['unites_par_boite_cnamts'] = table['unites_par_boite_cnamts'].apply(get_dose)
     if 'CODE_ATC' in info_utiles:
-        table['CODE_ATC_4'] = table['CODE_ATC'].apply(atc_4_lambda)    
+        table['CODE_ATC_4'] = table['CODE_ATC'].str[:5]
     if 'CIP' in info_utiles:
         table['CIP'] = table['CIP'].astype(str)
     return table
