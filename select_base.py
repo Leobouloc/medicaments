@@ -55,7 +55,9 @@ def selection_ASMR(table):
     ''' choisit une seule ASMR par CIP, pour ne pas avoir de doublon '''
     # TODO:
     table['Nom_Substance'].fillna('inconnu', inplace=True)
-    return table.groupby(['CIP','Nom_Substance']).first().reset_index()
+    # Attention : dans la selection, on ne filtre plus les groupes qui ont des substances inconnues
+    table = table.groupby(['CIP','Nom_Substance']).first().reset_index()
+    return table
 
 def selection_substance(table):
     '''Ajoute les champs selector et classe_a_conserver dans base_brute'''
@@ -144,7 +146,6 @@ def selection_substance(table):
 
 #    # On selectionne les lignes à éliminer car le CIP est déjà dedans
     cip_sel = table['CIP'].isin(table.loc[selector, 'CIP']) # True si le CIP est déjà dedans
-    table['cip_sel'] = cip_sel
     # On choisit les CIP qui n'ont pas été selectionné
     tab_copy = table[~cip_sel]
 
@@ -152,32 +153,36 @@ def selection_substance(table):
     # en retirant les voyelles
     voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
     substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
-    substance = tab_copy['Nom_Substance']    
+    substances = tab_copy['Nom_Substance']    
     for voy in voyelles:
-        substances_ddd = substance_ddd.str.replace(voy, '')
-        substance = substance.replace(voy, '')
+        substance_ddd = substance_ddd.str.replace(voy, '')
+        substances = substances.str.replace(voy, '')
         
-    tab_copy['substance_of_ddd'] = substance == substances_ddd
-    une_seule_substance_dans_base = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 1)
-    tab =  une_seule_substance_dans_base
+    tab_copy['substance_of_ddd'] = substances == substance_ddd
+    tab = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 1)
     selector_substance_ddd = tab[tab['substance_of_ddd']].index
+    
+    table['select_by_subst_match'] = False
+    table.loc[selector_substance_ddd, 'select_by_subst_match'] = True
+    
+    print "normalement, la seule valeur est 1: " + str(table[table['select_by_subst_match']].groupby('CIP').apply(len).value_counts())
 
     # TODO: inspecter pourquoi parfois il n'y a pas de match 
-    assert len(tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) > 1)) == 0
-    test = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 0)
+#    assert len(tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) > 1)) == 0
+#    test = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 0)
 
 
-    h2 = tab_copy.groupby('CIP').apply(lambda x: fuzzy_join(x, atc_ddd))
-    h2 = h2.reset_index() # h[0] correspond au fait d'être selectionné (T/F), et h['level_1'] est l'index du médicament
-    print 'les deux valeurs doivent être égales : ' + str(h2[0].sum()) + ' et ' + str(h2.loc[h2[0], 'CIP'].nunique())
-    assert h2[0].sum() == h2.loc[h2[0], 'CIP'].nunique()    
-    table['same_subst'] = False
-    indexes = h2.loc[h2[0], 'level_1']
-    table.loc[indexes, 'same_subst'] = True
+#    h2 = tab_copy.groupby('CIP').apply(lambda x: fuzzy_join(x, atc_ddd))
+#    h2 = h2.reset_index() # h[0] correspond au fait d'être selectionné (T/F), et h['level_1'] est l'index du médicament
+#    print 'les deux valeurs doivent être égales : ' + str(h2[0].sum()) + ' et ' + str(h2.loc[h2[0], 'CIP'].nunique())
+#    assert h2[0].sum() == h2.loc[h2[0], 'CIP'].nunique()    
+#    table['same_subst'] = False
+#    indexes = h2.loc[h2[0], 'level_1']
+#    table.loc[indexes, 'same_subst'] = True
 
-    print "La selection 'fuzzy_join' ajoute : " + str(table['same_subst'].sum()) + ' médicaments uniques'
+    print "La selection 'fuzzy_join' ajoute : " + str(table['select_by_subst_match'].sum()) + ' médicaments uniques'
 
-    selector = selector | table['same_subst']
+    selector = selector | table['select_by_subst_match']
     print "A l'étape 3), on a : "
     print table[selector].groupby('CIP').apply(len).value_counts()
 
@@ -237,11 +242,10 @@ def selection_substance(table):
     medicaments_par_classe_apr = table[selector].groupby('CODE_ATC_4')['CIP'].nunique()
     boites_vendues_par_classe_apr = table[selector].groupby('CODE_ATC_4')[period].sum().sum(axis = 1)
     classes_a_conserver_nb = (medicaments_par_classe_apr/medicaments_par_classe_avt)
-    classes_a_conserver_nb = classes_a_conserver_nb > 0.8
+    classes_a_conserver_nb = classes_a_conserver_nb >= 1
 
     classes_a_conserver_ventes = (boites_vendues_par_classe_apr / boites_vendues_par_classe_avt)
-    classes_a_conserver_ventes = classes_a_conserver_ventes > 0.8
-
+    classes_a_conserver_ventes = classes_a_conserver_ventes >= 1
 
     classes_a_conserver = classes_a_conserver_nb & classes_a_conserver_ventes
     classes_a_conserver = pd.DataFrame(classes_a_conserver, columns = ['classe_a_conserver'])
@@ -260,3 +264,8 @@ if __name__ == '__main__':
     base_brute = get_base_brute()
     base_ASMR = selection_ASMR(base_brute)
     test = selection_substance(base_ASMR)
+    
+    non_sel = test.groupby('CIP').filter(lambda x: ~x['selector'].any())
+    sauvables = non_sel.groupby('CIP').filter(lambda x: x['CHEMICAL_SUBSTANCE'].notnull().any())
+    # 222 médicaments pour lesquels on a tous champ substance (61 groupes ATC)
+    # 779 medicaments pour lesquels on n'a pas de champ substance (175 groupes ATC)
