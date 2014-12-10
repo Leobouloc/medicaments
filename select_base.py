@@ -6,7 +6,7 @@ Created on Tue Dec 09 12:15:50 2014
 """
 
 import math
-import numpy as np      
+import numpy as np
 import pandas as pd
 
 from exploitation_sniiram import get_base_brute
@@ -19,9 +19,8 @@ def lambda_float(x):
         return float(x)
     except:
         return np.nan
-        
 
-        
+
 def sel_by_dosage_value(table):
     '''Sensé selectionner les CIP dont les dosages sont des nombres ronds '''
     dosage = table['Dosage']
@@ -47,7 +46,6 @@ def sel_by_dosage_value(table):
                     else:
                         dosage = 10 * dosage
     return pd.Series(False, index = dosage.index)
-
 
 
 def selection_CIP_ASMR(table):

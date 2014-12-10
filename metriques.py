@@ -6,11 +6,11 @@ Created on Mon Oct 13 10:14:27 2014
 """
 import pandas as pd
 import scipy
-from panda_tools import panda_merge
+from tools.panda_tools import panda_merge
 
 
 global somme_classe
-somme_classe = base_brute.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
+somme_classe = base.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
 
 
 def is_me_too(table_classe):
@@ -183,7 +183,7 @@ def volume_moyen(table_groupe, date, average_over=12, selection='princeps', prop
     '''Renvoie simplement le volume moyen des princeps (avant la chute), ou des génériques (sur toute la période)'''
     assert selection in ['generiques', 'princeps']
 
-    if not np.isnan(date):
+    if not isinstance(date, float):
         if selection == 'princeps':
             table_groupe_princeps = table_groupe[table_groupe['Type'] == 0]
             chute_moins_a = period.index(date) - average_over
@@ -222,7 +222,7 @@ def prix_moyen(table_groupe, average_over=12, prix='prix', selection='princeps',
 
     date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()
 
-    if not np.isnan(date_chute):
+    if not isinstance(date_chute, float):
         if selection == 'princeps':
             table_groupe_princeps = table_groupe[table_groupe['Type'] == 0]
             chute_moins_a = period.index(date_chute) - average_over
@@ -246,7 +246,7 @@ def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, rel
 def volume_entree_princeps_lambda(base_brute, Id_Groupe):
     '''Variation de volume de sa classe lors de l'entrée sur le marché du médicament défini par ligne'''
     date = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'premiere_vente'].min()
-    if not np.isnan(date) and date != 200301:
+    if not isinstance(date, float) and date != '200301':
         string_select = 'CODE_ATC_4'
         code_atc = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_select].iloc[0]
         table_classe = base_brute[base_brute[string_select] == code_atc]
@@ -261,7 +261,8 @@ def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, relati
     '''Proportion = True renvoie la variation par rapport au volume de la classe'''
     '''Span : écart additionnel au centre'''
     '''Center : centre de la moyenne (par défaut la chute du brevet)'''
-    if not np.isnan(date):
+#    if not np.isnan(date):
+    if not isinstance(date, float):
         # variations entre chute_moins_a et chute_moins_b // et // chute_plus_a et chute_plus_b
         chute_moins_a = period.index(date) - average_over - span + center
         chute_plus_b = period.index(date) + average_over + span + center
@@ -269,7 +270,7 @@ def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, relati
         chute_plus_b = min(chute_plus_b, len(period))
         chute_moins_b = min(chute_moins_a + average_over, len(period))
         chute_plus_a = max(0, chute_plus_b - average_over)
-
+        
         if chute_plus_a <= chute_moins_b: # On vérifie que les plages ne se recoupent pas
             return np.nan
         if chute_plus_a == chute_plus_b or chute_moins_a == chute_moins_b:
@@ -282,7 +283,7 @@ def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, relati
             code_atc = table_groupe['CODE_ATC'].iloc[0]
 #                diviseur_avant = somme_classe_avant.loc[code_atc, :].iloc[range(chute_moins, chute_moins + average_over)]
 #                diviseur_apres = somme_apres / somme_classe_apres.loc[code_atc, :].iloc[range(chute_plus - average_over, chute_plus)]
-            somme_avant = somme_avant / somme_classe.loc[code_atc, :].iloc[range(chute_moins_a, chute_moins_b)].sum()
+            somme_avant = somme_avant / somme_classe.loc[code_atc, :].iloc[range(chute_moins_a, chute_moins_a)].sum()
             somme_apres = somme_apres / somme_classe.loc[code_atc, :].iloc[range(chute_plus_a, chute_plus_b)].sum()
             '''On renvoie la variation absolue en proportion'''
             return (somme_apres - somme_avant)
@@ -315,7 +316,7 @@ def var_prix(table_groupe, date, average_over=12, prix = 'prix_par_dj', selectio
     if selection == 'princeps':
         table_groupe = table_groupe[table_groupe['Type'] == 0]
 
-    if not np.isnan(date):
+    if not isinstance(date, float):
         # variations entre chute_moins_a et chute_moins_b // et // chute_plus_a et chute_plus_b
         chute_moins_a = period.index(date) - average_over - span + center
         chute_plus_b = period.index(date) + average_over + span + center
@@ -411,16 +412,21 @@ def taux_rembours_float(string):
 try:
     var_vol
 except:
+    
+    
+    full[period_nb_dj_rembourse] = full[period_nb_dj_rembourse].replace(0, np.nan)
+    full = full[full[period_nb_dj_rembourse].notnull().any(axis = 1)]
+    
     '''Pour chaque groupe : variation relative de volume entre l année précédent la chute et l année suivante'''
-    var_vol = base_brute.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 10, relatif_a_la_classe = True))
+    var_vol = full.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 10, relatif_a_la_classe = False))
     #var_vol = var_vol[var_vol.apply(lambda x: abs(x))<10] ### On ne garde que les variations 'normales'
     #'''Pour chaque groupe : variation relative de prix entre l année précédent la chute et l année suivante'''
-    var_prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_chute_brevet(x, average_over = 12, span = 10, selection='ecart_princeps_generique'))
+    var_prix = full.groupby('Id_Groupe').apply(lambda x: prix_chute_brevet(x, average_over = 12, span = 10, selection='ecart_princeps_generique'))
 
-    vol = base_brute.groupby('Id_Groupe').apply(lambda x: vol_abs_chute_brevet(x, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe))
-    prix = base_brute.groupby('Id_Groupe').apply(lambda x: prix_moyen(x, average_over=12, selection='princeps', prix='prix_par_dj'))
+    vol = full.groupby('Id_Groupe').apply(lambda x: vol_abs_chute_brevet(x, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe))
+    prix = full.groupby('Id_Groupe').apply(lambda x: prix_moyen(x, average_over=12, selection='princeps', prix='prix_par_dj'))
 
-    taux_rembours = base_brute.groupby('Id_Groupe')['Taux_rembours'].apply(lambda x: x.iloc[0])
+    taux_rembours = full.groupby('Id_Groupe')['Taux_rembours'].apply(lambda x: x.iloc[0])
 
     var_vol.name = 'var_vol'
     var_prix.name = 'var_prix'
@@ -451,11 +457,11 @@ except:
     #plt.show()
 
     '''repérage des me-too'''
-    a = base_brute.groupby('CODE_ATC_4').apply(is_me_too)
+    a = full.groupby('CODE_ATC_4').apply(is_me_too)
     me_too = a.sum()
     # variation du volume de la classe
-    var_vol_me_too = pd.Series([volume_entree_princeps_lambda(base_brute, x) for x in me_too], index = me_too)
+    var_vol_me_too = pd.Series([volume_entree_princeps_lambda(full, x) for x in me_too], index = me_too)
     #me_toos = base_brute[base_brute['Id_Groupe'].apply(lambda x: x in me_too)] # restriction de base_brute aux me-too
     #var_vol_me_too = me_toos.apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis=1)
-    nombre_princeps = pd.Series([nb_groupes(base_brute, x, when = 'avant') for x in me_too], index = me_too)
+    nombre_princeps = pd.Series([nb_groupes(full, x, when = 'avant') for x in me_too], index = me_too)
 

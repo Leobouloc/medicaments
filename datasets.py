@@ -78,12 +78,12 @@ def dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
         vars_needed = [ x for x in (from_gouv + from_cnamts)]
         for var in vars_needed:
             assert var in table.columns
-        table['CIP'] = table['CIP'].astype(int64).astype(str)
-        return table
     except:
         table = create_dataset_brut(from_gouv, maj_gouv, from_cnamts, force)
         table.to_csv(file, sep=',', index = False)
-        return table
+
+    table['CIP'] = table['CIP'].astype(int64).astype(str)
+    return table
 
 def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     file = os.path.join(working_path, 'dataset_plus.csv')
@@ -94,13 +94,12 @@ def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
         vars_needed = [x for x in (from_gouv + from_cnamts)]
         for var in vars_needed:
             assert var in table.columns
-        table['CIP'] = table['CIP'].astype(int64).astype(str)
-        return table
     except:
         print('on refait la table dataset_plus')
         table = create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force)
         table.to_csv(file, sep=',', index = False)
-        return table
+    table['CIP'] = table['CIP'].astype(int64).astype(str)
+    return table
 
 
 if __name__ == '__main__':
