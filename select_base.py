@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 
 from exploitation_sniiram import get_base_brute
-from fuzzy_join import fuzzy_join
 from load_data.atc_ddd import load_atc_ddd
 from outils import all_periods
 
@@ -51,7 +50,7 @@ def sel_by_dosage_value(table):
 
 
 
-def selection_ASMR(table):
+def selection_CIP_ASMR(table):
     ''' choisit une seule ASMR par CIP, pour ne pas avoir de doublon '''
     # TODO:
     table['Nom_Substance'].fillna('inconnu', inplace=True)
@@ -59,12 +58,19 @@ def selection_ASMR(table):
     table = table.groupby(['CIP','Nom_Substance']).first().reset_index()
     return table
 
-def selection_substance(table):
-    '''Ajoute les champs selector et classe_a_conserver dans base_brute'''
-    '''selector dépend des criteres choisis'''
-    '''classe_a_conserver montre les classes qui sont assez complètes après selector'''
+def selection_CIP_substance(table):
+    '''Ajoute les champs "selector" et "classe_a_conserver" dans la table'''
+    '''selector est une selectiona au niveau de chaque CIP'''
+    '''classe_a_conserver montre les classes qui sont assez complètes après la selection (selector)'''
+    
+    # XXXXXXXXXXXXXXXXXXXXXXXXX
+    # PARAMETRE
+    method = 2 # Methode pour le fuzzy join (1 : sans séparation des mots, 2 : avec séparation des mots)
+    # XXXXXXXXXXXXXXXXXXXXXXXXX
 
-    period = all_periods(table)[0]
+    
+     #######################################################################
+     ##### ETAPE 0 : selection par cip unique       
     
     # Calcul du nombre de lignes pour chaque CIP
     nb_CIP = table.groupby('CIP').apply(len)
@@ -76,6 +82,9 @@ def selection_substance(table):
     nb_substances = pd.DataFrame(nb_substances)
     nb_substances.columns = ['nb_substances'] # Il y a un bug à cause de l'attribut name de la série
     table = pd.merge(table, nb_substances, left_on = 'CIP', right_index = True, how = 'left')
+
+     #######################################################################
+     ##### ETAPE 1 : selection par le mot _Base dans le nom_substance
 
     # On regarde si le nom de substance contient le mot Base et si celui çi est unique pour le CIP
     # Selecteur : On sélectionne les médicaments définis comme "de base"
@@ -98,7 +107,7 @@ def selection_substance(table):
 
 
      #######################################################################
-     ##### ETAPE 2
+     ##### ETAPE 2 : selection par cip rond
 
     # On selectionne les lignes à éliminer car le CIP est déjà dedans
     table['cip_sel'] = table['CIP'].isin(table.loc[selector, 'CIP']) # True si le CIP est déjà dedans
@@ -123,7 +132,7 @@ def selection_substance(table):
 
 
      #######################################################################
-     ##### ETAPE 3
+     ##### ETAPE 3 : selection fuzzy join
 
     # On selectionne les lignes à éliminer car le CIP est déjà dedans
     cip_sel = table['CIP'].isin(table.loc[selector, 'CIP']) # True si le CIP est déjà dedans
@@ -132,8 +141,6 @@ def selection_substance(table):
 
     # On selectionne les médicaments dont le Code_substance est proche
     # en retirant les voyelles
-    
-    method = 1
     
     if method == 1:
         voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
@@ -162,7 +169,7 @@ def selection_substance(table):
         substance_ddd = substance_ddd.str.split().apply(lambda_set_or_nan)
         substances = substances.str.split().apply(lambda_set_or_nan)
         
-    tab_copy['substance_of_ddd'] = substances == substance_ddd
+    tab_copy.loc[:, 'substance_of_ddd'] = substances == substance_ddd
     tab = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 1)
     selector_substance_ddd = tab[tab['substance_of_ddd']].index
     
@@ -182,12 +189,12 @@ def selection_substance(table):
     # Var veut dire variation (i.e. il y a plusieurs valeurs possibles)
     var_in_substance = (tab_copy.groupby('CIP')['Code_Substance'].apply(lambda x: x.nunique()) > 1) & tab_copy.groupby('CIP')['Code_Substance'].apply(lambda x: x.notnull().all())
     var_in_substance = var_in_substance[var_in_substance]
-    tab_copy['var_in_substance'] = tab_copy['CIP'].isin(var_in_substance.index)
+    tab_copy.loc[:, 'var_in_substance'] = tab_copy['CIP'].isin(var_in_substance.index)
 #    var_in_substance = pd.DataFrame(var_in_substance)
 #    var_in_substance.columns = ['var_in_substance']
     var_in_ASMR = (tab_copy.groupby('CIP')['Valeur_ASMR'].apply(lambda x: x.nunique()) > 1) & (tab_copy.groupby('CIP')['Valeur_ASMR'].apply(lambda x: x.notnull().all()))
     var_in_ASMR = var_in_ASMR[var_in_ASMR]
-    tab_copy['var_in_ASMR'] = tab_copy['CIP'].isin(var_in_ASMR.index)
+    tab_copy.loc[:, 'var_in_ASMR'] = tab_copy['CIP'].isin(var_in_ASMR.index)
 
     print 'xxxxxxxxxxxxxxx'
     print 'Variations dans la substance'
@@ -197,40 +204,75 @@ def selection_substance(table):
     print tab_copy['var_in_ASMR'].value_counts()
     print 'zzzzzzzzzzzzzz'
 
-    table['selector'] = selector
+    table['selector_cip'] = selector
+    
+    table.drop(['nb_CIP', 'nb_substances'], axis=1)
+    return table    
+
+
+def selection_classe(table, selector = ''):
+    '''Renvoie une table en ajoutant le champ "classe_a_conserver"'''
+    '''Ce champ indique si la sélection effectuée par selector laisse les classes entières'''    
+    
+    # XXXXXXXXXXXXXXXXXXXXXXXXX
+    # PARAMETRE
+    seuil_conservation = 1 # Proportion de ventes et nombres de médicaments pour que la classe soit considérée complète
+    # XXXXXXXXXXXXXXXXXXXXXXXXX
+
+    if isinstance(selector, str):
+        selector = table['selector_cip']
+
+    period = all_periods(table)[0]
+            
+    def lambda_nb(x):
+        return x.loc[selector, 'CIP'].nunique() >= seuil_conservation * x['CIP'].nunique()
+    
+    def lambda_ventes(x):
+        return x.loc[selector, period].sum().sum() >= seuil_conservation * x[period].sum().sum()
+    
+    classes_a_conserver = table.groupby('CODE_ATC_4').filter(lambda x: lambda_nb(x) & lambda_ventes(x))
+
+    ind = classes_a_conserver.index
+    
+    table['selector_classe'] = table.index.isin(ind)
+    
+    return table
+
 
     ######################################################################
+    ###### Visualisation des facteurs de multiplicité
 
-    medicaments_par_classe_avt = table.groupby('CODE_ATC_4')['CIP'].nunique()
-    boites_vendues_par_classe_avt = table.groupby('CODE_ATC_4')[period].sum().sum(axis=1)
+#    medicaments_par_classe_avt = table.groupby('CODE_ATC_4')['CIP'].nunique()
+#    boites_vendues_par_classe_avt = table.groupby('CODE_ATC_4')[period].sum().sum(axis=1)
 
-    medicaments_par_classe_apr = table[selector].groupby('CODE_ATC_4')['CIP'].nunique()
-    boites_vendues_par_classe_apr = table[selector].groupby('CODE_ATC_4')[period].sum().sum(axis = 1)
-    classes_a_conserver_nb = (medicaments_par_classe_apr/medicaments_par_classe_avt)
-    classes_a_conserver_nb = classes_a_conserver_nb >= 1
+#    medicaments_par_classe_apr = table[selector].groupby('CODE_ATC_4')['CIP'].nunique()
+#    boites_vendues_par_classe_apr = table[selector].groupby('CODE_ATC_4')[period].sum().sum(axis = 1)
 
-    classes_a_conserver_ventes = (boites_vendues_par_classe_apr / boites_vendues_par_classe_avt)
-    classes_a_conserver_ventes = classes_a_conserver_ventes >= 1
+#    classes_a_conserver_ventes = table.groupby('CODE_ATC_4').filter(lambda x: )    
+    
+#    classes_a_conserver_nb = (medicaments_par_classe_apr/medicaments_par_classe_avt)
+#    classes_a_conserver_nb = classes_a_conserver_nb >= seuil_conservation
 
-    classes_a_conserver = classes_a_conserver_nb & classes_a_conserver_ventes
-    classes_a_conserver = pd.DataFrame(classes_a_conserver, columns = ['classe_a_conserver'])
+#    classes_a_conserver_ventes = (boites_vendues_par_classe_apr / boites_vendues_par_classe_avt)
+#    classes_a_conserver_ventes = classes_a_conserver_ventes >= seuil_conservation
+
+#    classes_a_conserver = classes_a_conserver_nb & classes_a_conserver_ventes
+#    classes_a_conserver = pd.DataFrame(classes_a_conserver, columns = ['classe_a_conserver'])
 
     ######## Fin : filtrage pour les classes assez complètes
     ######################################################################
 
-
-    table = table.merge(classes_a_conserver, left_on = 'CODE_ATC_4', right_index = True, how = 'left')
-
-    table.drop(['nb_CIP', 'nb_substances'], axis=1)
-    return table
+#    table = table.merge(classes_a_conserver, left_on = 'CODE_ATC_4', right_index = True, how = 'left')
 
 
 if __name__ == '__main__':
     base_brute = get_base_brute()
-    base_ASMR = selection_ASMR(base_brute)
-    test = selection_substance(base_ASMR)
+    base_ASMR = selection_CIP_ASMR(base_brute)
+    base_substance = selection_CIP_substance(base_ASMR)
+    base = selection_classe(base_substance, base_substance['selector_cip'])
     
-    non_sel = test.groupby('CIP').filter(lambda x: ~x['selector'].any())
+    sel = base['selector_cip'] & base['selector_classe'] # La dernière sélection à faire   
+    
+    # Les CIP que l'on a pas récupéré
+    non_sel = base.groupby('CIP').filter(lambda x: ~x['selector_cip'].any())
     sauvables = non_sel.groupby('CIP').filter(lambda x: x['CHEMICAL_SUBSTANCE'].notnull().any())
-    # 222 médicaments pour lesquels on a tous champ substance (61 groupes ATC)
-    # 779 medicaments pour lesquels on n'a pas de champ substance (175 groupes ATC)
