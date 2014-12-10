@@ -243,13 +243,13 @@ def volume_chute_brevet(table_groupe, average_over=12, span = 0, center = 0, rel
     return var_volume(table_groupe, date_chute, average_over, span, center, relatif_a_la_classe, somme_classe)
 
 
-def volume_entree_princeps_lambda(base_brute, Id_Groupe):
-    '''Variation de volume de sa classe lors de l'entrée sur le marché du médicament défini par ligne'''
-    date = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, 'premiere_vente'].min()
+def volume_entree_princeps_lambda(table, Id_Groupe):
+    '''Variation de volume de sa classe (à l'exception du groupe) lors de l'entrée sur le marché du médicament défini par ligne'''
+    date = table.loc[base_brute['Id_Groupe'] == Id_Groupe, 'premiere_vente'].min()
     if not isinstance(date, float) and date != '200301':
         string_select = 'CODE_ATC_4'
-        code_atc = base_brute.loc[base_brute['Id_Groupe'] == Id_Groupe, string_select].iloc[0]
-        table_classe = base_brute[base_brute[string_select] == code_atc]
+        code_atc = table.loc[base_brute['Id_Groupe'] == Id_Groupe, string_select].iloc[0]
+        table_classe = table[(table[string_select] == code_atc) & (table['Id_Groupe'] != Id_Groupe)]
         var_vol = var_volume(table_classe, date, average_over=12, span =2, center = 0, relatif_a_la_classe = False, somme_classe = somme_classe)
         return var_vol
     else:
