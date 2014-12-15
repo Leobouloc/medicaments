@@ -7,6 +7,7 @@ Created on Fri Oct 24 16:39:30 2014
 
 import numpy
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, return_ma = False, smooth_avr = None, xlabel = '', ylabel = '', title = ''):

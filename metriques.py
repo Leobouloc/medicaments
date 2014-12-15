@@ -413,7 +413,7 @@ try:
     var_vol
 except:
     
-    
+    full = base
     full[period_nb_dj_rembourse] = full[period_nb_dj_rembourse].replace(0, np.nan)
     full = full[full[period_nb_dj_rembourse].notnull().any(axis = 1)]
     

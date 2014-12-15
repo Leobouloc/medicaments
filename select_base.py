@@ -13,8 +13,6 @@ from exploitation_sniiram import get_base_brute
 from load_data.atc_ddd import load_atc_ddd
 from outils import all_periods
 
-
-def lambda_float(x):
     try:
         return float(x)
     except:

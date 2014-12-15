@@ -28,8 +28,8 @@ def add_date_vente_observee(sniiram):
         derniere_vente[cond_dern] = month - 1
 
     # Ajout de la donnée première vente à la base Sniiram
-    sniiram['premiere_vente'] = str(int(premiere_vente))
-    sniiram['derniere_vente'] = str(int(derniere_vente))
+    sniiram['premiere_vente'] = premiere_vente#.apply(lambda x: str(int(x)))
+    sniiram['derniere_vente'] = derniere_vente#.apply(lambda x: str(int(x)))
     return sniiram
 
 
