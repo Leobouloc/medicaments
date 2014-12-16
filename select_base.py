@@ -13,12 +13,7 @@ from exploitation_sniiram import get_base_brute
 from load_data.atc_ddd import load_atc_ddd
 from outils import all_periods
 
-    try:
-        return float(x)
-    except:
-        return np.nan
-
-
+    
 def sel_by_dosage_value(table):
     '''Sensé selectionner les CIP dont les dosages sont des nombres ronds '''
     dosage = table['Dosage']
