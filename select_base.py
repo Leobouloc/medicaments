@@ -56,17 +56,14 @@ def selection_CIP_ASMR(table):
     table = table.groupby(['CIP','Nom_Substance']).first().reset_index()
     return table
 
-def selection_CIP_substance(table):
-    '''Ajoute les champs "selector" et "classe_a_conserver" dans la table'''
-    '''selector est une selectiona au niveau de chaque CIP'''
-    '''classe_a_conserver montre les classes qui sont assez complètes après la selection (selector)'''
-    
-    # XXXXXXXXXXXXXXXXXXXXXXXXX
-    # PARAMETRE
-    method = 2 # Methode pour le fuzzy join (1 : sans séparation des mots, 2 : avec séparation des mots)
-    # XXXXXXXXXXXXXXXXXXXXXXXXX
+def selection_CIP_substance(table, method_fuzzy_join=2):
+    '''Ajoute les champs "selector" et "classe_a_conserver" dans la table
+        selector est une selectiona au niveau de chaque CIP
+        classe_a_conserver montre les classes qui sont assez complètes après la selection (selector)
+        method_fuzzy_join : Methode pour le fuzzy join (1 : sans séparation des mots, 2 : avec séparation des mots)
+        '''
 
-    
+
      #######################################################################
      ##### ETAPE 0 : selection par cip unique       
     
@@ -140,7 +137,7 @@ def selection_CIP_substance(table):
     # On selectionne les médicaments dont le Code_substance est proche
     # en retirant les voyelles
     
-    if method == 1:
+    if method_fuzzy_join == 1:
         voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
         substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
         substances = tab_copy['Nom_Substance']    
@@ -148,7 +145,7 @@ def selection_CIP_substance(table):
             substance_ddd = substance_ddd.str.replace(voy, '')
             substances = substances.str.replace(voy, '')
             
-    if method == 2:
+    if method_fuzzy_join == 2:
         voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', '\xca', 'Ê']
         substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
         substances = tab_copy['Nom_Substance']
@@ -272,12 +269,12 @@ if __name__ == '__main__':
     base_brute = get_base_brute()
     base_ASMR = selection_CIP_ASMR(base_brute)
     base_substance = selection_CIP_substance(base_ASMR)
-    base = selection_classe(base_substance, base_substance['selector_cip'])
-    
-    sel = base['selector_cip'] & base['selector_classe'] # La dernière sélection à faire   
-    
-  
-    
-    # Les CIP que l'on a pas récupéré
-    non_sel = base.groupby('CIP').filter(lambda x: ~x['selector_cip'].any())
-    sauvables = non_sel.groupby('CIP').filter(lambda x: x['CHEMICAL_SUBSTANCE'].notnull().any())
+#    base = selection_classe(base_substance, base_substance['selector_cip'])
+#    
+#    sel = base['selector_cip'] & base['selector_classe'] # La dernière sélection à faire   
+#    
+#  
+#    
+#    # Les CIP que l'on a pas récupéré
+#    non_sel = base.groupby('CIP').filter(lambda x: ~x['selector_cip'].any())
+#    sauvables = non_sel.groupby('CIP').filter(lambda x: x['CHEMICAL_SUBSTANCE'].notnull().any())
