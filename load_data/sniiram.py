@@ -28,19 +28,24 @@ def add_date_vente_observee(sniiram):
         derniere_vente[cond_dern] = month - 1
 
     # Ajout de la donnée première vente à la base Sniiram
-    sniiram['premiere_vente'] = premiere_vente#.apply(lambda x: str(int(x)))
-    sniiram['derniere_vente'] = derniere_vente#.apply(lambda x: str(int(x)))
+    sniiram['premiere_vente'] = premiere_vente
+    sniiram['derniere_vente'] = derniere_vente
     return sniiram
 
 
 def load_sniiram(date=200301):
-    assert date in [200301, 201003, 201012]
-    path = os.path.join(path_sniiram, 'since' + str(date) + '.csv')
+    assert date in [200301, 201003, 201012, None]
+    if date is None: 
+        path = os.path.join(path_sniiram, 'PHARMA.csv')
+    else:
+        path = os.path.join(path_sniiram, 'since' + str(date) + '.csv')
     table = pd.read_csv(path, sep=';')
     table.columns = ['date', 'CIP', 'nb']
     table['CIP'].fillna(1, inplace=True)
+#    # CIP qui ne sont jamais vendus mais qui apparaissent dans la base
+#    test = table['CIP'].isin([3400932999910, 3400938829860, 3400938830002, 3400938830231, 3400939593418])
+#    set_trace()
     table['CIP'] = table['CIP'].astype(int64).astype(str)
-        
     table['nb'] *= 97
     table['year'] = table['date'] // 100
     table = table.pivot(index='CIP', columns='date', values='nb')
@@ -74,7 +79,7 @@ def load_sniiram2():
     return add_date_vente_observee(table)
 
 if __name__ == '__main__':
-    test = load_sniiram()
+    test = load_sniiram(None)
     #set_trace()
 #    print(table.loc[ table['cip13'] == 3400934917547].groupby('year').sum())
 #    table.set_index('cip13', inplace=True)
