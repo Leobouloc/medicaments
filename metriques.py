@@ -10,7 +10,7 @@ from tools.panda_tools import panda_merge
 
 
 global somme_classe
-somme_classe = base.groupby('CODE_ATC')[period_nb_dj_rembourse].sum()
+somme_classe = base.groupby('CODE_ATC')[period_ddd_rembourse].sum()
 
 
 def is_me_too(table_classe):
@@ -51,7 +51,7 @@ def nb_groupes(table, Id_Groupe, when = 'avant'):
     return nb_groupes
 
 
-#ventes_par_groupe = base_brute.groupby('Id_Groupe')[period_nb_dj_rembourse].sum().sum(axis = 1)
+#ventes_par_groupe = base_brute.groupby('Id_Groupe')[period_ddd_rembourse].sum().sum(axis = 1)
 #code_par_groupe = base_brute.groupby('Id_Groupe')['CODE_ATC_4'].first()
 #test = panda_merge(code_par_groupe, ventes_par_groupe)
 #test.columns = ['CODE_ATC_4', 'ventes']
@@ -190,7 +190,7 @@ def volume_moyen(table_groupe, date, average_over=12, selection='princeps', prop
             chute_moins_a = max(0, chute_moins_a)
             chute_moins_b = min(chute_moins_a + average_over, len(period))
 
-            moyenne_avant = table_groupe_princeps[period_nb_dj_rembourse].iloc[:, range(chute_moins_a, chute_moins_b)].mean().mean()
+            moyenne_avant = table_groupe_princeps[period_ddd_rembourse].iloc[:, range(chute_moins_a, chute_moins_b)].mean().mean()
 
             if proportion:
                 code_atc = table_groupe['CODE_ATC'].iloc[0]
@@ -200,7 +200,7 @@ def volume_moyen(table_groupe, date, average_over=12, selection='princeps', prop
                 return(moyenne_avant)
         elif selection == 'generiques':
             table_groupe_generique = table_groupe[table_groupe['Type'] != 0]
-            generique = table_groupe_generique[period_nb_dj_rembourse].iloc[:, period.index(date_chute)].mean()
+            generique = table_groupe_generique[period_ddd_rembourse].iloc[:, period.index(date_chute)].mean()
             if proportion:
                 code_atc = table_groupe['CODE_ATC'].iloc[0]
                 moyenne_avant_classe = somme_classe.loc[code_atc, :].iloc[range(chute_moins, chute_moins + average_over)].mean()
@@ -212,11 +212,11 @@ def volume_moyen(table_groupe, date, average_over=12, selection='princeps', prop
 
 def prix_moyen(table_groupe, average_over=12, prix='prix', selection='princeps', somme_classe = somme_classe):
     '''Renvoie simplement le prix moyen des princeps (avant la chute), ou des génériques'''
-    assert prix in ['prix_par_dj', 'prix']
+    assert prix in ['prix_par_ddd', 'prix']
     assert selection in ['generiques', 'princeps']
 
-    if prix == 'prix_par_dj':
-        var_prix = period_prix_par_dj
+    if prix == 'prix_par_ddd':
+        var_prix = period_prix_par_ddd
     elif prix == 'prix':
         var_prix = period_prix
 
@@ -276,8 +276,8 @@ def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, relati
         if chute_plus_a == chute_plus_b or chute_moins_a == chute_moins_b:
             return np.nan
 
-        somme_avant = table_groupe[period_nb_dj_rembourse].iloc[:, range(chute_moins_a, chute_moins_b)].sum().sum()
-        somme_apres = table_groupe[period_nb_dj_rembourse].iloc[:, range(chute_plus_a, chute_plus_b)].sum().sum()
+        somme_avant = table_groupe[period_ddd_rembourse].iloc[:, range(chute_moins_a, chute_moins_b)].sum().sum()
+        somme_apres = table_groupe[period_ddd_rembourse].iloc[:, range(chute_plus_a, chute_plus_b)].sum().sum()
 
         if relatif_a_la_classe:
             code_atc = table_groupe['CODE_ATC'].iloc[0]
@@ -295,20 +295,20 @@ def var_volume(table_groupe, date, average_over=12, span = 0, center = 0, relati
 #test = base_brute[base_brute['Type'] == 0].apply(lambda x: volume_entree_princeps_lambda(base_brute, x), axis = 1)
 
 
-def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6):
+def prix_chute_brevet(table_groupe, average_over=12, prix = 'prix_par_ddd', selection = 'groupe', span=6):
    date_chute = table_groupe.loc[~table_groupe['role'],'premiere_vente'].min()
-   return var_prix(table_groupe, date_chute, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span=6)
+   return var_prix(table_groupe, date_chute, average_over=12, prix = 'prix_par_ddd', selection = 'groupe', span=6)
 
 
-def var_prix(table_groupe, date, average_over=12, prix = 'prix_par_dj', selection = 'groupe', span = 0, center = 0,):
+def var_prix(table_groupe, date, average_over=12, prix = 'prix_par_ddd', selection = 'groupe', span = 0, center = 0,):
     '''Calcule la variation relative de prix pour un an avant et après la chute de brevet pour le groupe'''
     '''selection = "groupe" : ecart relatif du prix moyen des médicaments du groupe avant et après la chute'''
     '''selection = "princeps" : ecart relatif du prix moyen des princeps avant et après la chute'''
     '''selection = "ecart princeps_generique" : ecart de prix entre le princeps et les génériques mis sur le marché'''
-    assert prix in ['prix_par_dj', 'prix'] # C'est bê te, c'est pareil (??)
+    assert prix in ['prix_par_ddd', 'prix'] # C'est bê te, c'est pareil (??)
     assert selection in ['groupe', 'princeps', 'ecart_princeps_generique']
 
-    if prix == 'prix_par_dj':
+    if prix == 'prix_par_ddd':
         var_prix = period_prix_par_dosage
     elif prix == 'prix':
         var_prix = period_prix
@@ -414,8 +414,8 @@ try:
 except:
     
     full = base
-    full[period_nb_dj_rembourse] = full[period_nb_dj_rembourse].replace(0, np.nan)
-    full = full[full[period_nb_dj_rembourse].notnull().any(axis = 1)]
+    full[period_ddd_rembourse] = full[period_ddd_rembourse].replace(0, np.nan)
+    full = full[full[period_ddd_rembourse].notnull().any(axis = 1)]
     
     '''Pour chaque groupe : variation relative de volume entre l année précédent la chute et l année suivante'''
     var_vol = full.groupby('Id_Groupe').apply(lambda x: volume_chute_brevet(x, average_over = 12, span = 10, relatif_a_la_classe = False))
@@ -424,7 +424,7 @@ except:
     var_prix = full.groupby('Id_Groupe').apply(lambda x: prix_chute_brevet(x, average_over = 12, span = 10, selection='ecart_princeps_generique'))
 
     vol = full.groupby('Id_Groupe').apply(lambda x: vol_abs_chute_brevet(x, average_over=12, span = 0, center = 0, proportion = False, somme_classe = somme_classe))
-    prix = full.groupby('Id_Groupe').apply(lambda x: prix_moyen(x, average_over=12, selection='princeps', prix='prix_par_dj'))
+    prix = full.groupby('Id_Groupe').apply(lambda x: prix_moyen(x, average_over=12, selection='princeps', prix='prix_par_ddd'))
 
     taux_rembours = full.groupby('Id_Groupe')['Taux_rembours'].apply(lambda x: x.iloc[0])
 

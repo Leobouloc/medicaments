@@ -14,6 +14,6 @@ def all_periods(base_brute):
     assert len(period_prix) == len(period)
     assert len([x for x in period_prix if x not in base_brute.columns]) == 0
     period_prix_par_dosage = ['prix_par_dosage_' + str(date) for date in period]
-    period_nb_dj_rembourse = ['nb_dj_rembourse_' + str(date) for date in period]
-    period_prix_par_dj = ['prix_par_dj_' + str(date) for date in period]
-    return period, period_prix, period_prix_par_dosage, period_nb_dj_rembourse, period_prix_par_dj
+    period_ddd_rembourse = ['ddd_rembourse_' + str(date) for date in period]
+    period_prix_par_ddd = ['prix_par_ddd_' + str(date) for date in period]
+    return period, period_prix, period_prix_par_dosage, period_ddd_rembourse, period_prix_par_ddd

@@ -90,7 +90,7 @@ def info_display(data, input_val=None , name=None ,CIP13=None, Id_Groupe=None, C
 
     if variables is None:
         vars_display=['Id_Groupe', 'Type', 'LABO', 'Date_declar_commerc',
-                      'prix_par_dj_201401']
+                      'prix_par_ddd_201401']
     else:
         vars_display = variables
     if name is not None:
@@ -230,7 +230,7 @@ def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', aver
     select = base_brute.loc[:, string_atc] == CODE_ATC
     #base_brute = base_brute.apply(lambda x: rewrite period_prix(x), axis = 1)
     for value in set(base_brute.loc[select, color_by]):
-        output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_dj]
+        output = base_brute[select].loc[base_brute.loc[select, color_by] == value, period_prix_par_ddd]
         output.index = base_brute[select].loc[base_brute.loc[select, color_by] == value, 'CIP']
         # output.columns = [12*(int(x)/100-2003 + period] # Façon la plus simple d'avoir une axe des abcisses qui montre la date
         if average:
@@ -241,7 +241,7 @@ def graph_prix_classe(input_val=None, Id_Groupe=None, color_by='Id_Groupe', aver
 
         if color_by == 'Id_Groupe':
             date_generique = int(date_generication_groupe.loc[value])
-            x = 'prix_par_dj_' + str(date_generique)
+            x = 'prix_par_ddd_' + str(date_generique)
             if average:
                 ymax = output[x]
             else:
@@ -279,7 +279,7 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
 
     assert isinstance(code_atc4, str)
 
-    period, period_prix, period_prix_par_dosage, period_nb_dj_rembourse, period_prix_par_dj = all_periods(base_brute)
+    period, period_prix, period_prix_par_dosage, period_ddd_rembourse, period_prix_par_ddd = all_periods(base_brute)
     assert sorted(period) == period
     assert sorted(period_prix) == period_prix
 
@@ -298,14 +298,14 @@ def graph_volume_classe(base_brute, input_val=None, color_by='Id_Groupe',
 
     # Choix du type de display (cout total ou dosage remboursé)
     if display == 'cout':
-        tab1 = tab.loc[:, period_nb_dj_rembourse]
-        tab2 = tab.loc[:, period_prix_par_dj]
+        tab1 = tab.loc[:, period_ddd_rembourse]
+        tab2 = tab.loc[:, period_prix_par_ddd]
         #Faire la moyenne
         tab1.columns = period
         tab2.columns = period
         output = tab1*tab2
     if display == 'volume':
-        output = tab.loc[:, period_nb_dj_rembourse]
+        output = tab.loc[:, period_ddd_rembourse]
         output.columns = period
 
     if variations:
@@ -433,7 +433,7 @@ def display_classe(base_brute, input_val=None, sum_by=['CIP'], color_by=['Id_Gro
         code_atc4 =  base_brute.loc[base_brute['Id_Groupe'] == input_val, 'CODE_ATC_4'].iloc[0]
 
     assert isinstance(code_atc4, str)
-    period, period_prix, period_prix_par_dosage, period_nb_dj_rembourse, period_prix_par_dj = all_periods(base_brute)
+    period, period_prix, period_prix_par_dosage, period_ddd_rembourse, period_prix_par_ddd = all_periods(base_brute)
     assert sorted(period) == period
     assert sorted(period_prix) == period_prix
 
@@ -451,10 +451,10 @@ def display_classe(base_brute, input_val=None, sum_by=['CIP'], color_by=['Id_Gro
         date_generication_groupe = date_generication_groupe.apply(str)
 
     # Choix du type de display (cout total ou dosage remboursé)
-    output = tab.loc[:, period_nb_dj_rembourse]
+    output = tab.loc[:, period_ddd_rembourse]
     output.columns = period
     if display == 'cout':
-        tab2 = tab.loc[:, period_prix_par_dj]
+        tab2 = tab.loc[:, period_prix_par_ddd]
         #Faire la moyenne
         tab2.columns = period
         output = output*tab2
