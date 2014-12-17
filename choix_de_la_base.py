@@ -9,17 +9,17 @@ import numpy as np
 import pandas as pd
 
 
-def calcul_dosage_par_prestation_test(table):
+def calcul_dosage_par_presta_test(table):
     '''Renvoie le dosage par prestation estimé pour les deux bases cnamts et medic_gouv'''
-    print 'actuellement dans calcul_dosage_par_prestation'
+    print 'actuellement dans calcul_dosage_par_presta'
     # Pour la base medic_gouv
     table.loc[table['Dosage'] == 'qs', 'Dosage'] = 0  # Cas particulier
     table['Dosage_num'] = table['Dosage'].str.findall('\d*\.?\d+').str.get(0)
     table['Dosage_num'] = table['Dosage_num'].astype(float)
-    table['dosage_par_prestation_medic_gouv'] = table['Dosage_num']*table['nb_ref_in_label_medic_gouv']
-    table['dosage_par_prestation_medic_gouv'].replace(0, np.nan, inplace=True)
+    table['dosage_par_presta_medic_gouv'] = table['Dosage_num']*table['nb_ref_in_label_medic_gouv']
+    table['dosage_par_presta_medic_gouv'].replace(0, np.nan, inplace=True)
     # Pour la base cnamts
-    table['dosage_par_prestation_cnamts'] = table['DOSAGE_SA']*table['NB_UNITES']
+    table['dosage_par_presta_cnamts'] = table['DOSAGE_SA']*table['NB_UNITES']
     return table
 
 def new_std(x):
@@ -33,12 +33,12 @@ def choix_de_la_base(table):
     Le choix est fait de telle sorte à minimiser la variance de prix au sein d un groupe'''
 
     print 'actuellement dans choix_de_la_base'
-    table = calcul_dosage_par_prestation_test(table)
+#    table = calcul_ddd_par_presta_test(table)
     table['base_choisie'] = np.nan
 
-#    prix_nul = table['prix_par_dosage_medic_gouv'] == 0
-#    table.loc[prix_nul, 'prix_par_dosage_medic_gouv'] = \
-#    table.loc[prix_nul, 'prix_par_dosage_medic_gouv'].apply(lambda x: np.nan)
+#    prix_nul = table['prix_par_ddd_medic_gouv'] == 0
+#    table.loc[prix_nul, 'prix_par_ddd_medic_gouv'] = \
+#    table.loc[prix_nul, 'prix_par_ddd_medic_gouv'].apply(lambda x: np.nan)
 
 #    global taille_du_groupe
 #    global prix_moyen_par_groupe_medic_gouv
@@ -48,8 +48,6 @@ def choix_de_la_base(table):
     group_name = 'Id_Groupe'
     grp = table.groupby(group_name)
     taille_du_groupe = grp.size()
-   
-    # TODO : prendre le plus complêt des deux
   
     date = 201406  # TODO: prendre la dernière date plus joliement  
     string = 'prix_' + str(date)
@@ -59,16 +57,16 @@ def choix_de_la_base(table):
     grp_list = dict()
     for dosage_name in ['cnamts', 'medic_gouv']:
         
-        selector = table['dosage_par_prestation_' + dosage_name].notnull() & (table['dosage_par_prestation_' + dosage_name] != 0)
+        selector = table['ddd_par_presta_' + dosage_name].notnull() & (table['ddd_par_presta_' + dosage_name] != 0)
 
-        taille_du_groupe = grp['dosage_par_prestation_' + dosage_name].apply(lambda x: x.notnull().sum())
+        taille_du_groupe = grp['ddd_par_presta_' + dosage_name].apply(lambda x: x.notnull().sum())
 
-        table['prix_par_dosage_' + dosage_name] = np.nan
-        table.loc[selector, 'prix_par_dosage_' + dosage_name] = table.loc[selector, string] / table.loc[selector, 'dosage_par_prestation_' + dosage_name]
-        prix_moyen_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].sum().div(taille_du_groupe)
+        table['prix_par_ddd_' + dosage_name] = np.nan
+        table.loc[selector, 'prix_par_ddd_' + dosage_name] = table.loc[selector, string] / table.loc[selector, 'ddd_par_presta_' + dosage_name]
+        prix_moyen_par_groupe[dosage_name] = grp['prix_par_ddd_' + dosage_name].sum().div(taille_du_groupe)
         #.apply(lambda x: x*x) #Il s'agit en fait du carré
 #        selector_grp = grp.apply(lambda x: any(x.notnull())) ### select groups that are not all nan
-        prix_var_norm_par_groupe[dosage_name] = grp['prix_par_dosage_' + dosage_name].apply(new_std).div(prix_moyen_par_groupe[dosage_name])
+        prix_var_norm_par_groupe[dosage_name] = grp['prix_par_ddd_' + dosage_name].apply(new_std).div(prix_moyen_par_groupe[dosage_name])
         # On conserve les prix dans la même base si on a tous les prix d'un groupe
         prix_moyen_par_groupe[dosage_name] = prix_moyen_par_groupe[dosage_name].notnull()
         grp_list[dosage_name] = set(prix_moyen_par_groupe[dosage_name].index)
@@ -90,8 +88,8 @@ def choix_de_la_base(table):
     table.groupby(['test', 'base_choisie']).size()
     
     todo = table['base_choisie'].isnull()
-    medic = table['prix_par_dosage_medic_gouv'].notnull()
-    cnam = table['prix_par_dosage_cnamts'].notnull()
+    medic = table['prix_par_ddd_medic_gouv'].notnull()
+    cnam = table['prix_par_ddd_cnamts'].notnull()
     table.loc[medic & todo, 'base_choisie'] = 'medic_gouv'
     todo = table['base_choisie'].isnull()
     table.loc[cnam & todo, 'base_choisie'] = 'medic_gouv'
@@ -130,16 +128,16 @@ def choix_de_la_base(table):
 
 
 def choix_de_la_base_lambda1(ligne):
-    if ligne['prix_par_dosage_medic_gouv'] == 0:
-        ligne['prix_par_dosage_medic_gouv'] = np.nan
-    if sum(ligne[['prix_par_dosage_medic_gouv', 'prix_par_dosage_cnamts']].isnull()) == 2:
+    if ligne['prix_par_ddd_medic_gouv'] == 0:
+        ligne['prix_par_ddd_medic_gouv'] = np.nan
+    if sum(ligne[['prix_par_ddd_medic_gouv', 'prix_par_ddd_cnamts']].isnull()) == 2:
         ligne['base_choisie'] = 'Aucune'
-    elif sum(ligne[['prix_par_dosage_medic_gouv', 'prix_par_dosage_cnamts']].isnull()) == 1:
-        if np.isnan(ligne['prix_par_dosage_medic_gouv']):
+    elif sum(ligne[['prix_par_ddd_medic_gouv', 'prix_par_ddd_cnamts']].isnull()) == 1:
+        if np.isnan(ligne['prix_par_ddd_medic_gouv']):
             ligne['base_choisie'] = 'cnamts'
         else:
             ligne['base_choisie'] = 'medic_gouv'
-    elif ligne['prix_par_dosage_medic_gouv'] == ligne['prix_par_dosage_cnamts']:
+    elif ligne['prix_par_ddd_medic_gouv'] == ligne['prix_par_ddd_cnamts']:
         ligne['base_choisie'] = 'medic_gouv'
     return ligne
 
@@ -150,8 +148,8 @@ def choix_de_la_base_lambda2(ligne):
     # if taille_du_groupe[ligne[group_name]] <=2:
     #    ligne['base_choisie'] = 'medic_gouv'
 
-    ratio_medic_gouv = ligne['prix_par_dosage_medic_gouv'] / float(prix_moyen_par_groupe['medic_gouv'][ligne[group_name]])
-    ratio_cnamts = ligne['prix_par_dosage_cnamts'] / float(prix_moyen_par_groupe['cnamts'][ligne[group_name]])
+    ratio_medic_gouv = ligne['prix_par_ddd_medic_gouv'] / float(prix_moyen_par_groupe['medic_gouv'][ligne[group_name]])
+    ratio_cnamts = ligne['prix_par_ddd_cnamts'] / float(prix_moyen_par_groupe['cnamts'][ligne[group_name]])
     if ratio_medic_gouv < 1:
         ratio_medic_gouv = float(1) / ratio_medic_gouv
     if ratio_cnamts < 1:

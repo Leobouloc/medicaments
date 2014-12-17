@@ -274,6 +274,10 @@ if __name__ == '__main__':
     base_substance = selection_CIP_substance(base_ASMR)
     base = selection_classe(base_substance, base_substance['selector_cip'])
     
+    # TODO: ci dessous est temporaire : changer par 
+    base.loc[base['ddd_par_presta'].isnull(), 'ddd_par_presta'] = base['ddd_par_presta_cnamts']
+    base.loc[base['ddd_par_presta'].isnull(), 'ddd_par_presta'] = base['ddd_par_presta_medic_gouv']
+    
     sel = base['selector_cip'] & base['selector_classe'] # La dernière sélection à faire   
     
   

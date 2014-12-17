@@ -128,6 +128,6 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
 
 
 if __name__ == '__main__':
-    info_utiles_from_cnamts = ['CIP', 'CIP7', 'CODE_ATC', 'NB_UNITES', 'DOSAGE_SA', 'UNITE_SA','LABO']
+    info_utiles_from_cnamts = ['CIP', 'CIP7', 'CODE_ATC', 'FORME', 'NB_UNITES', 'DOSAGE_SA', 'UNITE_SA','LABO']
     test = bdm_cnamts(info_utiles_from_cnamts)
 

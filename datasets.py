@@ -75,7 +75,7 @@ def dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
         assert not force
         # TODO: check we have dataset_brut.csv was generated with maj_gouv
         table = read_csv(file, sep=',')
-        vars_needed = [ x for x in (from_gouv + from_cnamts)]
+        vars_needed = [x for x in (from_gouv + from_cnamts)]
         for var in vars_needed:
             assert var in table.columns
     except:
