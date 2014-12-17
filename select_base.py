@@ -13,6 +13,8 @@ from exploitation_sniiram import get_base_brute
 from load_data.atc_ddd import load_atc_ddd
 from outils import all_periods
 
+
+def lambda_float(x):
     try:
         return float(x)
     except:
@@ -206,25 +208,24 @@ def selection_CIP_substance(table):
     return table    
 
 
-def selection_classe(table, selector = ''):
+def selection_classe(table, selector = '', seuil_conservation=1):
     '''Renvoie une table en ajoutant le champ "classe_a_conserver"'''
-    '''Ce champ indique si la sélection effectuée par selector laisse les classes entières'''    
+    '''Ce champ indique si la sélection effectuée par selector laisse les classes entières
+        - seuil_conservation : Proportion de ventes et nombres de médicaments pour que la classe soit considérée complète
+    '''    
+    assert seuil_conservation >= 0 
+    assert seuil_conservation <= 1
     
-    # XXXXXXXXXXXXXXXXXXXXXXXXX
-    # PARAMETRE
-    seuil_conservation = 1 # Proportion de ventes et nombres de médicaments pour que la classe soit considérée complète
-    # XXXXXXXXXXXXXXXXXXXXXXXXX
-
     if isinstance(selector, str):
         selector = table['selector_cip']
 
-    period = all_periods(table)[0]
+    periods = all_periods(table)[0]
             
     def lambda_nb(x):
         return x.loc[selector, 'CIP'].nunique() >= seuil_conservation * x['CIP'].nunique()
     
     def lambda_ventes(x):
-        return x.loc[selector, period].sum().sum() >= seuil_conservation * x[period].sum().sum()
+        return x.loc[selector, periods].sum().sum() >= seuil_conservation * x[periods].sum().sum()
     
     classes_a_conserver = table.groupby('CODE_ATC_4').filter(lambda x: lambda_nb(x) & lambda_ventes(x))
 
@@ -260,6 +261,12 @@ def selection_classe(table, selector = ''):
 
 #    table = table.merge(classes_a_conserver, left_on = 'CODE_ATC_4', right_index = True, how = 'left')
 
+def get_base_selected(force=False):
+    base_brute = get_base_brute(force)
+    base_ASMR = selection_CIP_ASMR(base_brute)
+    base_substance = selection_CIP_substance(base_ASMR)
+    base = selection_classe(base_substance, base_substance['selector_cip'])
+    return base    
 
 if __name__ == '__main__':
     base_brute = get_base_brute()
@@ -268,6 +275,8 @@ if __name__ == '__main__':
     base = selection_classe(base_substance, base_substance['selector_cip'])
     
     sel = base['selector_cip'] & base['selector_classe'] # La dernière sélection à faire   
+    
+  
     
     # Les CIP que l'on a pas récupéré
     non_sel = base.groupby('CIP').filter(lambda x: ~x['selector_cip'].any())

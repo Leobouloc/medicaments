@@ -8,18 +8,32 @@ Created on Tue Nov 25 22:37:37 2014
 """
 import matplotlib.pyplot as plt
 
-from exploitation_sniiram import get_base_brute
+from select_base import get_base_selected
 from display_and_graphs import graph_volume_classe, display_classe
 from outils import all_periods
 
-base_brute = get_base_brute()
+base = get_base_selected(True)
+base = base[base['selector_cip']]
 
-
-statine = base_brute[base_brute['CODE_ATC_4'] == "C10AA"]
+statine = base[base['CODE_ATC_4'] == "C10AA"]
 statine['Id_Groupe'].value_counts(dropna=False)
+
+statine['premiere_vente'].fillna(201600, inplace=True)
+statine['premiere_vente'] = statine['premiere_vente'].astype(int)
+
 statine['premiere_vente'].value_counts(dropna=False)
 statine['premiere_vente'].hist(bins=50)
 statine['premiere_vente'].hist(by=statine['Id_Groupe'], bins=50)
+
+
+# TODO: ecrire une vérification des dosages
+
+statine.loc[:, all_periods(statine)[0]].sum().plot()
+# TODO : on vend d'n coup plus de DDD !
+statine.loc[:, all_periods(statine)[3]].sum().plot()
+
+statine.loc[:, all_periods(statine)[1]].mean().plot()
+statine.loc[:, all_periods(statine)[2]].mean().plot()
 
 
 # TODO: select 1 ASMR
@@ -29,7 +43,12 @@ statine.CIP.value_counts()
 grp = statine[statine['Id_Groupe'] == 915]
 grp.iloc[:, :30]
 
+statine['Id_Groupe'].fillna(0, inplace=True)
 test = statine.groupby('Id_Groupe').sum()
+test[all_periods(statine)[3]].T.plot()
+statine.sum()[all_periods(statine)[3]].T.plot()
+
+test = statine.groupby('CODE_ATC').sum()
 test[all_periods(statine)[3]].T.plot()
 statine.sum()[all_periods(statine)[3]].T.plot()
 
@@ -40,9 +59,9 @@ test[all_periods(statine)[3]].T.plot()
 test = statine.groupby(['CODE_ATC','role']).sum()
 test[all_periods(statine)[0]].T.plot()
 
-statine[all_periods(statine)[0]].T.plot()
 statine[all_periods(statine)[0]].sum().plot()
 plt.show()
+statine[all_periods(statine)[0]].T.plot()
 
 
 
@@ -54,9 +73,9 @@ statine['Code_Substance']
 statine['Code_Substance'].value_counts()
 statine['Id_Group'].value_counts()
 statine['Id_Groupe'].value_counts()
-statine = base_brute[base_brute['CODE_ATC'] == "C10AA05"]
+statine = base[base['CODE_ATC'] == "C10AA05"]
 statine
-statine = base_brute[base_brute['CODE_ATC'] == "C10AA05"]
+statine = base[base['CODE_ATC'] == "C10AA05"]
 statine
 statine['CIP']
 
@@ -69,7 +88,7 @@ graph_volume_classe(statine.drop_duplicates('CIP'), input_val="C10AA",
                   
 graph_volume_classe(statine.drop_duplicates('CIP'), input_val="C10AA",
                     display='volume', make_sum=True)
-graph_volume_classe(base_brute, input_val="C10AA05", make_sum=True)
+graph_volume_classe(base, input_val="C10AA05", make_sum=True)
 
 #import display_and_graphs as dis
 #dis.graph_prix_classe('C10AA')
