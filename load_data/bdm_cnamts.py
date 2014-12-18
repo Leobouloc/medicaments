@@ -38,6 +38,7 @@ def recode_dosage_sa(table):
     #Supprimer le texte en particulier
     #table = table.loc[table['DOSAGE_SA'].apply(lambda x: x!='NON RENSEIGNE' and x!='NON RENSIGNE' and x!='NON RE' and x!='NR')]
     #Supprimer toutes les listes avec du texte
+    table['DOSAGE_SA_ini'] = table['DOSAGE_SA'].copy()
     table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace(',','.')
 #    table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
 #    table = table.loc[table['DOSAGE_SA'].notnull(), :]
@@ -127,7 +128,33 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
     return table
 
 
-if __name__ == '__main__':
-    info_utiles_from_cnamts = ['CIP', 'CIP7', 'CODE_ATC', 'NB_UNITES', 'DOSAGE_SA', 'UNITE_SA','LABO']
-    test = bdm_cnamts(info_utiles_from_cnamts)
 
+
+if __name__ == '__main__':
+    info_utiles_from_cnamts = ['CIP', 'CIP7', 'CODE_ATC', 'NB_UNITES', 'DOSAGE_SA',
+                               'UNITE_SA','LABO', 'NOM_LONG1', 'NOM_LONG2', 'CODE_LISTE',
+                               'CODE_CPLT']
+    test = bdm_cnamts(info_utiles_from_cnamts)
+    
+    deux_subst = test.NOM_LONG1.str.contains('MG/') & test.NOM_LONG1.str.contains(', ')
+    deux_subst = (1 - test.NOM_LONG1.str.contains('24 H')) & (deux_subst)
+    deux_subst = (1 - test.NOM_LONG1.str.contains('16 H')) & (deux_subst)
+
+    deux_subst = (1 - test.NOM_LONG1.str.contains(' ML ')) & (deux_subst)
+    
+    prob = test[deux_subst]
+    # 781 cas sur 1327
+    HYDROCHLOROTHIAZIDE = prob.NOM_LONG1.str.contains('HYDROCHLOROTHIAZIDE')
+    hydroturc = prob[HYDROCHLOROTHIAZIDE]
+    #  HYDROCHLOROTHIAZIDE en deuxième position
+    deuxieme = hydroturc[hydroturc.NOM_LONG1.str.contains('/HYDROCHLOROTHIAZIDE') | \
+                         hydroturc.NOM_LONG1.str.contains(', HYDROCHLOROTHIAZIDE') | \
+                         hydroturc.NOM_LONG1.str.contains('IL HYDROCHLOROTHIAZIDE') |
+                         hydroturc.NOM_LONG1.str.contains('-HYDROCHLOROTHIAZIDE')] 
+    #  HYDROCHLOROTHIAZIDE en deuxième position
+    premiere = hydroturc[~hydroturc.CIP.isin(deuxieme.CIP)] # en ait premier aussi.
+    # => tous les HYDROCHLOROTHIAZIDE sont en deuxième position
+    
+    autre = prob[~HYDROCHLOROTHIAZIDE]
+
+    
