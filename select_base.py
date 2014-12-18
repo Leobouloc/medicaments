@@ -20,6 +20,11 @@ def lambda_float(x):
     except:
         return np.nan
 
+def _lambda_set_or_nan(x):
+    if isinstance(x, list):
+        return set(x)
+    else:
+        return np.nan
 
 def sel_by_dosage_value(table):
     '''Sensé selectionner les CIP dont les dosages sont des nombres ronds '''
@@ -63,6 +68,15 @@ def selection_CIP_substance(table, method_fuzzy_join=2):
         method_fuzzy_join : Methode pour le fuzzy join (1 : sans séparation des mots, 2 : avec séparation des mots)
         '''
 
+    info_utiles = ['CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+                   'Code_Substance', 'Nom_Substance', 'Nature_Composant', 
+                   'Taux_rembours',
+                   'Statu_admin_presta',
+                   'Ref_Dosage', 'Dosage', 'Label_presta','Valeur_ASMR', 'Date_ASMR',
+                   'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente',
+                   'CODE_ATC', 'CODE_ATC_4',  'LABO', 'DOSAGE_SA','UNITE_SA', 'NB_UNITES',
+                   'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
+    table = table[info_utiles]
 
      #######################################################################
      ##### ETAPE 0 : selection par cip unique       
@@ -96,14 +110,11 @@ def selection_CIP_substance(table, method_fuzzy_join=2):
 
     # On fait l'union des selecteurs
     selector = (table['nb_CIP'] == 1) | selector_is_Base #| selector_is_SA
-    print "A l'étape 1), on a : "
-    print table[selector].groupby('CIP').apply(len).value_counts()
+    print "A l'étape 1), on a : ", table[selector].groupby('CIP').size().value_counts().loc[1]
     assert table.loc[selector, 'CIP'].value_counts().max() == 1
-
 
      #######################################################################
      ##### ETAPE 2 : selection par cip rond
-
     # On selectionne les lignes à éliminer car le CIP est déjà dedans
     table['cip_sel'] = table['CIP'].isin(table.loc[selector, 'CIP']) # True si le CIP est déjà dedans
     cip_sel = table['cip_sel']
@@ -122,9 +133,8 @@ def selection_CIP_substance(table, method_fuzzy_join=2):
     print "La selection 'dosage_rond' ajoute : " + str(table['cip_rond'].sum()) + ' médicaments uniques'
 
     selector = selector | table['cip_rond']
-    print "A l'étape 2), on a : "
-    print table[selector].groupby('CIP').apply(len).value_counts()
-
+    print "A l'étape 2), on a : ", table[selector].groupby('CIP').size().value_counts().loc[1]
+    assert table.loc[selector, 'CIP'].value_counts().max() == 1
 
      #######################################################################
      ##### ETAPE 3 : selection fuzzy join
@@ -137,32 +147,25 @@ def selection_CIP_substance(table, method_fuzzy_join=2):
     # On selectionne les médicaments dont le Code_substance est proche
     # en retirant les voyelles
     
+    substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
+    substances = tab_copy['Nom_Substance']
+    
     if method_fuzzy_join == 1:
         voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', "D'", '\xca', 'Ê', ' ']
-        substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
-        substances = tab_copy['Nom_Substance']    
         for voy in voyelles:
             substance_ddd = substance_ddd.str.replace(voy, '')
             substances = substances.str.replace(voy, '')
             
     if method_fuzzy_join == 2:
         voyelles = ['A', 'E', 'I', 'O', 'U', 'Y', 'É', '\xc9', '\xca', 'Ê']
-        substance_ddd = tab_copy['CHEMICAL_SUBSTANCE'].str.upper()
-        substances = tab_copy['Nom_Substance']
         substances = substances.str.replace(' DE ', ' ')
         substances = substances.str.replace(" D'", ' ')
         for voy in voyelles:
             substance_ddd = substance_ddd.str.replace(voy, '')
             substances = substances.str.replace(voy, '')
         
-        def lambda_set_or_nan(x):
-            if isinstance(x, list):
-                return set(x)
-            else:
-                return np.nan
-        
-        substance_ddd = substance_ddd.str.split().apply(lambda_set_or_nan)
-        substances = substances.str.split().apply(lambda_set_or_nan)
+        substance_ddd = substance_ddd.str.split().apply(_lambda_set_or_nan)
+        substances = substances.str.split().apply(_lambda_set_or_nan)
         
     tab_copy.loc[:, 'substance_of_ddd'] = substances == substance_ddd
     tab = tab_copy.groupby('CIP').filter(lambda x: sum(x['substance_of_ddd']) == 1)
@@ -172,13 +175,12 @@ def selection_CIP_substance(table, method_fuzzy_join=2):
     table.loc[selector_substance_ddd, 'select_by_subst_match'] = True
     
     print "normalement, la seule valeur est 1: " + str(table[table['select_by_subst_match']].groupby('CIP').apply(len).value_counts())
-
     print "La selection 'fuzzy_join' ajoute : " + str(table['select_by_subst_match'].sum()) + ' médicaments uniques'
 
     selector = selector | table['select_by_subst_match']
-    print "A l'étape 3), on a : "
-    print table[selector].groupby('CIP').apply(len).value_counts()
-
+    print "A l'étape 3), on a : ",  table[selector].groupby('CIP').size().value_counts().loc[1]
+    assert table.loc[selector, 'CIP'].value_counts().max() == 1
+    
     #######################################################################
 
     # Var veut dire variation (i.e. il y a plusieurs valeurs possibles)
@@ -186,6 +188,11 @@ def selection_CIP_substance(table, method_fuzzy_join=2):
     var_in_substance = var_in_substance[var_in_substance]
     tab_copy.loc[:, 'var_in_substance'] = tab_copy['CIP'].isin(var_in_substance.index)
 #    var_in_substance = pd.DataFrame(var_in_substance)
+    
+# Tentative : on regarde la substance commune à tous les éléments de la classe ATC ! 
+    tab_copy['CODE_ATC'].value_counts()
+    
+    
 #    var_in_substance.columns = ['var_in_substance']
     var_in_ASMR = (tab_copy.groupby('CIP')['Valeur_ASMR'].apply(lambda x: x.nunique()) > 1) & (tab_copy.groupby('CIP')['Valeur_ASMR'].apply(lambda x: x.notnull().all()))
     var_in_ASMR = var_in_ASMR[var_in_ASMR]
@@ -202,7 +209,7 @@ def selection_CIP_substance(table, method_fuzzy_join=2):
     table['selector_cip'] = selector
     
     table.drop(['nb_CIP', 'nb_substances'], axis=1)
-    return table    
+    return table
 
 
 def selection_classe(table, selector = '', seuil_conservation=1):
@@ -218,18 +225,15 @@ def selection_classe(table, selector = '', seuil_conservation=1):
 
     periods = all_periods(table)[0]
             
-    def lambda_nb(x):
+    def _lambda_nb(x):
         return x.loc[selector, 'CIP'].nunique() >= seuil_conservation * x['CIP'].nunique()
     
-    def lambda_ventes(x):
+    def _lambda_ventes(x):
         return x.loc[selector, periods].sum().sum() >= seuil_conservation * x[periods].sum().sum()
     
-    classes_a_conserver = table.groupby('CODE_ATC_4').filter(lambda x: lambda_nb(x) & lambda_ventes(x))
-
+    classes_a_conserver = table.groupby('CODE_ATC_4').filter(lambda x: _lambda_nb(x) & _lambda_ventes(x))
     ind = classes_a_conserver.index
-    
     table['selector_classe'] = table.index.isin(ind)
-    
     return table
 
 
@@ -258,16 +262,22 @@ def selection_classe(table, selector = '', seuil_conservation=1):
 
 #    table = table.merge(classes_a_conserver, left_on = 'CODE_ATC_4', right_index = True, how = 'left')
 
+
+def selection_no_perfusion(table):
+    return table[table['CODE_ATC_4'] != 'B05BA']
+
 def get_base_selected(force=False):
-    base_brute = get_base_brute(force)
-    base_ASMR = selection_CIP_ASMR(base_brute)
+    base_brute = get_base_brute()
+    base = selection_no_perfusion(base_brute)
+    base_ASMR = selection_CIP_ASMR(base)
     base_substance = selection_CIP_substance(base_ASMR)
     base = selection_classe(base_substance, base_substance['selector_cip'])
     return base    
 
 if __name__ == '__main__':
     base_brute = get_base_brute()
-    base_ASMR = selection_CIP_ASMR(base_brute)
+    base = selection_no_perfusion(base_brute)
+    base_ASMR = selection_CIP_ASMR(base)
     base_substance = selection_CIP_substance(base_ASMR)
 #    base = selection_classe(base_substance, base_substance['selector_cip'])
 #    
