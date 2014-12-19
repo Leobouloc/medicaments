@@ -35,6 +35,11 @@ def load_atc_ddd(brut=False):
     tab.loc[tab['UNITE'] == 'g', 'UNITE'] = 'MG'
     tab.loc[tab['UNITE'] == 'mcg', 'DDD'] /= 1000
     tab.loc[tab['UNITE'] == 'mcg', 'UNITE'] = 'MG'
+    
+#    tab.loc[tab['UNITE'] == 'TU', 'DDD'] *= 1000
+#    tab.loc[tab['UNITE'] == 'TU', 'UNITE'] = 'U'
+#    tab.loc[tab['UNITE'] == 'MU', 'DDD'] *= 10**6
+#    tab.loc[tab['UNITE'] == 'MU', 'UNITE'] = 'U'
 #    tab = tab.apply(recode_ligne, axis=1)
     if brut:
       return tab

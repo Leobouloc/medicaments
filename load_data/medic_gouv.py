@@ -84,7 +84,9 @@ def recode_dosage(table):
 
     table['Dosage'] = table['Dosage'].str.replace('935.mg', '935 mg')
     table['Dosage'] = table['Dosage'].str.replace('25mg', '25 mg')
-    table['Dosage'] = table['Dosage'].str.replace('50mg', '50 mg') 
+    table['Dosage'] = table['Dosage'].str.replace('50mg', '50 mg')
+    
+#    table['Dosage'] = table['Dosage'].str.replace('UI', 'U')
     return table
 
 def recode_prix(table):

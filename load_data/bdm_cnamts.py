@@ -42,14 +42,17 @@ def recode_dosage_sa(table):
 #    table = table.loc[table['DOSAGE_SA'].apply(lambda x: recode_dosage_isfloat(str(x)))]
 #    table = table.loc[table['DOSAGE_SA'].notnull(), :]
     table['DOSAGE_SA'] = table['DOSAGE_SA'].apply(recode_dosage_as_float)
+    
 
     test_mui = table['UNITE_SA'].str.contains('MUI', na=False)
-    table.loc[test_mui,'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('MUI', 'UI')
+    table.loc[test_mui,'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('MUI', 'U')
     table.loc[test_mui,'DOSAGE_SA'] = table.loc[test_mui,'DOSAGE_SA'].apply(lambda x: x*1000000)
 
     test_grammes = table['UNITE_SA'] == 'G'
     table.loc[test_grammes, 'UNITE_SA'] = table.loc[test_mui,'UNITE_SA'].str.replace('G', 'MG')
     table.loc[test_grammes,'DOSAGE_SA'] = table.loc[test_grammes,'DOSAGE_SA'].apply(lambda x: x*1000)
+    
+#    table['DOSAGE_SA'] = table['DOSAGE_SA'].str.replace('UI', 'U') # Sa place est à la fin (ici)
 
     return table
 
@@ -129,5 +132,6 @@ def bdm_cnamts(info_utiles, unites_par_boite=True):
 
 if __name__ == '__main__':
     info_utiles_from_cnamts = ['CIP', 'CIP7', 'CODE_ATC', 'FORME', 'NB_UNITES', 'DOSAGE_SA', 'UNITE_SA','LABO']
+    info_utiles_from_cnamts = info_dispo
     test = bdm_cnamts(info_utiles_from_cnamts)
 

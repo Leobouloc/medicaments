@@ -12,7 +12,8 @@ from select_base import get_base_selected
 from display_and_graphs import graph_volume_classe, display_classe
 from outils import all_periods
 
-base = get_base_selected(True)
+base = get_base_selected(force = False)
+base_copy = base
 base = base[base['selector_cip']]
 
 statine = base[base['CODE_ATC_4'] == "C10AA"]
@@ -26,7 +27,7 @@ statine['premiere_vente'].hist(bins=50)
 statine['premiere_vente'].hist(by=statine['Id_Groupe'], bins=50)
 
 
-# TODO: ecrire une vérification des dosages
+# TODO: ecrire une verification des dosages
 
 statine.loc[:, all_periods(statine)[0]].sum().plot()
 # TODO : on vend d'n coup plus de DDD !
@@ -52,7 +53,7 @@ test = statine.groupby('CODE_ATC').sum()
 test[all_periods(statine)[3]].T.plot()
 statine.sum()[all_periods(statine)[3]].T.plot()
 
-statine['princeps'] 
+#statine['princeps'] 
 test = statine.groupby(['CODE_ATC','role']).sum()
 test[all_periods(statine)[3]].T.plot()
 
@@ -69,16 +70,13 @@ statine[all_periods(statine)[0]].T.plot()
 statine
 statine.iloc[:,:10]
 sel = gouv.CIP.isnull()
-statine['Code_Substance']
+#statine['Code_Substance']
 statine['Code_Substance'].value_counts()
 statine['Id_Group'].value_counts()
 statine['Id_Groupe'].value_counts()
 statine = base[base['CODE_ATC'] == "C10AA05"]
-statine
 statine = base[base['CODE_ATC'] == "C10AA05"]
-statine
 statine['CIP']
-
 
 display_classe(statine.drop_duplicates('CIP'), input_val="C10AA", 
                sum_by=['Id_Groupe','role'], display='volume')

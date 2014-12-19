@@ -20,7 +20,8 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
         selector = test.apply(lambda ligne: x-step/2 <= ligne['x'] and ligne['x']<x+step/2, axis = 1)
         avr = test.loc[selector, 'y'].mean()
         return(avr)
-        
+
+
     test = pd.merge(pd.DataFrame(serie1), pd.DataFrame(serie2), left_index = True, right_index = True, how='inner')    
     test.dropna(inplace = True)
     if isinstance(color_serie, str):
