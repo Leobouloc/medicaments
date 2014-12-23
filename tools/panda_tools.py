@@ -10,6 +10,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+def all_info(table):
+    '''n affiche que les colonnes non vides que l'on connait'''
+    cols_to_show = [col for col in table.columns if table[col].notnull().any()]
+    print (table[cols_to_show])
+    
+def grp_and_count(table, group, function):
+    a = table.groupby(group).apply(function)
+    b = table.groupby(group).apply(len)
+    c = panda_merge(a, b)
+    c.columns = ['a', 'b']
+    c = c.sort('a')
+    return c
+
 def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, return_ma = False, smooth_avr = None, xlabel = '', ylabel = '', title = ''):
     assert (not return_obj) or (not return_ma)   
     
