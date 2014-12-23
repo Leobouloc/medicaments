@@ -57,7 +57,7 @@ element_standard = [x.encode('cp1252') for x in element_standard]
 
 def recode_dosage_lambda1(x):
     try:
-        return str(float(x.split()[0]) / 1000) + ' mg'
+        return str(float(x.split()[0]) * 1000) + ' mg'
     except:
         return x
         
