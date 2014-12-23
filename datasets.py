@@ -103,14 +103,15 @@ def dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
 
 
 if __name__ == '__main__':
-    info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+    info_utiles_from_gouv = ['CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
                          'Code_Substance', 'Nom_Substance', 'Libelle_ASMR', 'Type',
                          'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                          'indic_droit_rembours', 'Statu_admin_presta',
                          'Ref_Dosage', 'Dosage', 'Label_presta','Valeur_ASMR',
                          'nb_ref_in_label_medic_gouv', 'Prescription',
                          'premiere_vente', 'derniere_vente']
-    info_utiles_from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA', 'UNITE_SA', 'NB_UNITES'] #LABO
+    info_utiles_from_cnamts = ['CIP', 'CODE_ATC', 'NB_UNITES', 'DOSAGE_SA',
+                               'UNITE_SA','LABO', 'NOM_LONG1', 'NOM_LONG2', 'CODE_LISTE',
+                               'CODE_CPLT'] #LABO
     test = dataset_brut(info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts, force=True)
-    import pdb
-    pdb.set_trace()
+
