@@ -56,10 +56,10 @@ print 'manquant ', len(manquant_dans_bdm)
 deja_calc = set([cip[:-5] for cip in os.listdir(path + 'cip')])
 print len(deja_calc)
 print len((list_cip1 & list_cip0) - deja_calc)
-for k in range(20):
-    time.sleep(120)
-    deja_calc = set([cip[:-5] for cip in os.listdir(path + 'cip')])
-    print len(deja_calc)
+#for k in range(20):
+#    time.sleep(120)
+#    deja_calc = set([cip[:-5] for cip in os.listdir(path + 'cip')])
+#    print len(deja_calc)
 
 
 pas_de_valeur = []
