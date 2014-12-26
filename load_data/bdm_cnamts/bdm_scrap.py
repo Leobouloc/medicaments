@@ -78,7 +78,7 @@ def get_val(all_fonts, _list, columns=None):
 
 def parse(file):
     global problem
-    print file
+#    print file
     ### START : Load du texte contenant l'information
     with open (file, "r") as myfile:
         data = myfile.read()  
@@ -212,4 +212,12 @@ if __name__ == '__main__':
     with open (path_BDM_scrap + 'problem.txt', "r") as myfile:
         problems = myfile.read().split(';')
 
+    for col in table.columns:
+        table[col] = table[col].str.encode('utf-8')
+    table.to_csv('without_prob_all.csv', encoding='utf-8')
+    table[table.dosage != '-'].to_csv('without_prob_with_dose.csv', encoding='utf-8')
     
+    len(problems)
+    
+
+   
