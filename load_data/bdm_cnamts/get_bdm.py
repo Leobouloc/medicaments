@@ -22,7 +22,7 @@ import os
 
 cip = 3400936172449
 
-path = 'D:\data\Medicament\BDM\\'
+from CONFIG import path_BDM_scrap
 url_opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
 
 
@@ -30,7 +30,7 @@ url_opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJa
 list_cip0 = []
 for list_num in range(530, 535):
     num = str(list_num)
-    tab = pd.read_csv(path + 'Fic_liste_CIP' + num + '.xls', delimiter = '\t')
+    tab = pd.read_csv(os.path.join(path_BDM_scrap, 'Fic_liste_CIP' + num + '.xls'), delimiter = '\t')
     cip_table = tab.iloc[:, 0].tolist()
     list_cip0 += cip_table
 
@@ -53,12 +53,12 @@ print 'manquant ', len(manquant_dans_bdm)
 
 
 # Deja calculé : 
-deja_calc = set([cip[:-5] for cip in os.listdir(path + 'cip')])
+deja_calc = set([cip[:-5] for cip in os.listdir(path_BDM_scrap + 'cip')])
 print len(deja_calc)
 print len((list_cip1 & list_cip0) - deja_calc)
 #for k in range(20):
 #    time.sleep(120)
-#    deja_calc = set([cip[:-5] for cip in os.listdir(path + 'cip')])
+#    deja_calc = set([cip[:-5] for cip in os.listdir(path_BDM_scrap + 'cip')])
 #    print len(deja_calc)
 
 
@@ -78,7 +78,7 @@ def load_cip(cip, ext):
     #with io.open('D:\data\Medicament\BDM' + str(cip), 'w') as json_file:
     #    json.dump(html_page, json_file, ensure_ascii=False)
     
-    with open(path + ext + '\\' + str(cip) + '.html', 'w') as f:
+    with open(os.path.join(path_BDM_scrap, ext, str(cip) + '.html'), 'w') as f:
         f.write(html_page)
 
 

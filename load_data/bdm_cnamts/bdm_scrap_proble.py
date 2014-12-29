@@ -200,21 +200,29 @@ def parse(file):
     return tab
     
   
+def cip_from_file_name(file_name):
+    '''Renvoie le numero de cip en prenant le path d Alexis '''
+    file_name = file_name.replace('D:\\data\\Medicament\\BDM\\/cip\\', '')
+    file_name = file_name.replace('.html', '')
+    return file_name
+    
+#problems_cip = [cip_from_file_name(x) for x in problems]
+  
 if __name__ == '__main__':
-    list_cip = os.listdir(path_BDM_scrap + '/cip')
+    list_cip = os.listdir(os.path.join(path_BDM_scrap, 'cip'))
     table = None
     i = 0
     problem = []
         
     ## Probleme 
-    with open (path_BDM_scrap + 'problem.txt', "r") as myfile:
+    with open (os.path.join(path_BDM_scrap, 'problem.txt'), "r") as myfile:
         problems = myfile.read().split(';')
 
     for file in problems:
         i += 1
         if i % 100 == 0: 
             print 'on en a fait', i
-        file_name = os.path.join(path_BDM_scrap + '/cip', file)
+        file_name = os.path.join(path_BDM_scrap, 'cip', file)
         tab = parse(file_name)
         if table is None: 
             table = tab
