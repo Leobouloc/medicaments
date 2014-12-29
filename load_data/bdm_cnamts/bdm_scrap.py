@@ -189,7 +189,7 @@ def parse(file):
     
     
 if __name__ == '__main__':
-    list_cip = os.listdir(path_BDM_scrap + '/cip')
+    list_cip = os.listdir(os.path.join(path_BDM_scrap, '/cip'))
     list_cip 
     table = None
     i = 0
@@ -198,7 +198,7 @@ if __name__ == '__main__':
         i += 1
         if i % 100 == 0: 
             print 'on en a fait', i
-        file_name = os.path.join(path_BDM_scrap + '/cip', file)
+        file_name = os.path.join(path_BDM_scrap, 'cip', file)
         tab = parse(file_name)
         if table is None: 
             table = tab
