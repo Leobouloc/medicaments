@@ -90,7 +90,7 @@ def parse(file):
     global problem
     print file
     ### START : Load du texte contenant l'information
-    with open (file, "r") as myfile:
+    with open(file, "r") as myfile:
         data = myfile.read()  
 
     ### END : Load du texte contenant l'information
@@ -203,6 +203,7 @@ def parse(file):
 def cip_from_file_name(file_name):
     '''Renvoie le numero de cip en prenant le path d Alexis '''
     file_name = file_name.replace('D:\\data\\Medicament\\BDM\\/cip\\', '')
+    file_name = file_name.replace('C:\\Users\\work\\Documents\\Etalab_data\\AFM\\BDM_scrap', '')
     file_name = file_name.replace('.html', '')
     return file_name
     
@@ -217,6 +218,8 @@ if __name__ == '__main__':
     ## Probleme 
     with open (os.path.join(path_BDM_scrap, 'problem.txt'), "r") as myfile:
         problems = myfile.read().split(';')
+        problems_cip = [cip_from_file_name(probl) for probl in problems]
+        problems = [os.path.join(path_BDM_scrap, 'cip', probl + '.html') for probl in problems_cip]
 
     for file in problems:
         i += 1
