@@ -17,7 +17,7 @@ def _contains(tab, _list):
     return all([x in tab.text for x in _list])
 
 def get_tab_colon(all_tables, _list, columns=None, len_assert=True):
-    '''Renvoie un tableau selectionné par ses colonnes (à valeurs dans _list)'''
+    '''Renvoie un tableau selectionné par ses colonnes (à valeurs dans _list), pour une entrée avec points virgules'''
     return_tab = [tab for tab in all_tables if _contains(tab, _list)]
     if not return_tab:
         return pd.DataFrame(columns=columns)
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         if i % 100 == 0: 
             print 'on en a fait', i
         file_name = os.path.join(path_BDM_scrap, 'cip', file)
-        tab = parse(file_name)
+        tab = parse(file_name) # modifie egalement problem
         if table is None: 
             table = tab
         else:
