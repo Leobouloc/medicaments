@@ -10,6 +10,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from CONFIG import path_BDM_scrap
+print path_BDM_scrap
 
 
 def _contains(tab, _list):
@@ -46,8 +47,6 @@ def get_tab(all_tables, _list, columns=None, len_assert=True):
 #        except: 
 #            print 'on a un probleme avec get_tab'
 #            pass
-            
-            
     return_tab= return_tab[0]
     return_tab = pd.io.html.read_html(str(return_tab), header = False)[0]
     if columns:
@@ -189,7 +188,7 @@ def parse(file):
     
     
 if __name__ == '__main__':
-    list_cip = os.listdir(os.path.join(path_BDM_scrap, '/cip'))
+    list_cip = os.listdir(os.path.join(path_BDM_scrap, 'cip'))
     list_cip 
     table = None
     i = 0
