@@ -212,10 +212,10 @@ if __name__ == '__main__':
 
     for col in table.columns:
         table[col] = table[col].str.encode('utf-8')
-    table.to_csv('without_prob_all.csv', encoding='utf-8')
-    table[table.dosage != '-'].to_csv('without_prob_with_dose.csv', encoding='utf-8')
-    
-    len(problems)
+    filename = os.path.join(path_BDM_scrap, 'without_prob_all.csv')
+    table.to_csv(filename, encoding='utf-8')
+    filename = os.path.join(path_BDM_scrap, 'without_prob_with_dose.csv')
+    table[table.dosage != '-'].to_csv(filename, encoding='utf-8')
     
 
    
