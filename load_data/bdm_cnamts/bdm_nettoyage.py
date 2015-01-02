@@ -15,9 +15,9 @@ def column_clean(x):
     x = x.replace('\xc3\x83\xc2\xa9', 'e')
     x = x.replace(' ', '_')
     x = x.replace(':', '')
-    x = x.strip('_')
     if not 'CIP' in x:
         x = x.lower()
+        x = x.strip('_')
     return x
     
 def classe_atc(table):
@@ -32,7 +32,11 @@ def classe_atc(table):
         print 'la colonne classe_atc n existe pas'
         
     return table
-
+    
+def CIP(table):
+    table['CIP'] = table.CIP.apply(str)
+    return table
+    
 file = os.path.join(path_BDM_scrap, 'without_prob_with_dose.csv')
 table = pd.read_csv(file)
 
@@ -41,7 +45,9 @@ table.drop(columns_to_drop, axis = 1, inplace = True)
 table.columns = [column_clean(col) for col in table.columns]
 
 
+
 table = classe_atc(table)
+table = CIP(table)
 
 ### print le ratio de completude de chaque colonne (par CIP)
 #grp = table.groupby('CIP')

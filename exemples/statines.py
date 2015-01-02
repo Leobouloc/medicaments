@@ -10,12 +10,9 @@ from select_base import get_base_selected
 from display_and_graphs import graph_volume_classe, display_classe
 from outils import all_periods
 
-<<<<<<< HEAD
 base = get_base_selected(force = False)
 base_copy = base
-=======
-base = get_base_selected()
->>>>>>> 5b7f49a3457abae2e19472c88adbb60d453e1a76
+
 base = base[base['selector_cip']]
 
 statine = base[base['CODE_ATC_4'].isin(["C10AA",'C10BA', 'C10BX'])]

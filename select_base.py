@@ -279,7 +279,7 @@ if __name__ == '__main__':
     base = selection_no_perfusion(base_brute)
     base_ASMR = selection_CIP_ASMR(base)
     base_substance = selection_CIP_substance(base_ASMR)
-<<<<<<< HEAD
+
     base = selection_classe(base_substance, base_substance['selector_cip'])
     
     # TODO: ci dessous est temporaire : changer par 
@@ -293,7 +293,7 @@ if __name__ == '__main__':
     # Les CIP que l'on a pas récupéré
     non_sel = base.groupby('CIP').filter(lambda x: ~x['selector_cip'].any())
     sauvables = non_sel.groupby('CIP').filter(lambda x: x['CHEMICAL_SUBSTANCE'].notnull().any())
-=======
+
 #    base = selection_classe(base_substance, base_substance['selector_cip'])
 #    
 #    sel = base['selector_cip'] & base['selector_classe'] # La dernière sélection à faire   
@@ -303,4 +303,4 @@ if __name__ == '__main__':
 #    # Les CIP que l'on a pas récupéré
 #    non_sel = base.groupby('CIP').filter(lambda x: ~x['selector_cip'].any())
 #    sauvables = non_sel.groupby('CIP').filter(lambda x: x['CHEMICAL_SUBSTANCE'].notnull().any())
->>>>>>> 5b7f49a3457abae2e19472c88adbb60d453e1a76
+
