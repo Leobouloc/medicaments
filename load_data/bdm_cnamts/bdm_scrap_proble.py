@@ -47,8 +47,8 @@ def get_tab(all_tables, _list, columns=None, len_assert=True):
 
     return_tab = None
     for temp in tabs:
-        tab = pd.io.html.read_html(str(temp), header = False)[0]
-#        if all([x in _list for x in tab.columns]):
+        tab = pd.io.html.read_html(str(temp), header = 0)[0]
+        tab.columns = [str(x) for x in tab.columns]
         if all([any([x in col for col in tab.columns])  for x in _list]):
             if return_tab is None:
                 return_tab = tab
@@ -57,21 +57,35 @@ def get_tab(all_tables, _list, columns=None, len_assert=True):
 
     if columns != None:
         return_tab.columns = columns
+    return return_tab
 
-#    try:
-#        if columns:
-#            return_tab.columns = columns
-#    except:
-#        for temp in tabs:
-#            print pd.io.html.read_html(str(temp), header = False)[0]
-#
-#        pdb.set_trace()
+def get_tab_verticale(all_tables, _list, columns=None, len_assert=True):
+    '''pour les tables sans entêtes à deux colonnes'''
+    tabs = [tab for tab in all_tables if _contains(tab, _list)]
+    if not tabs:
+        return pd.DataFrame(columns=columns)
+
+    return_tab = None
+    for temp in tabs:
+        tab = pd.io.html.read_html(str(temp), header = None)[0]
+        tab = tab.T
+        tab.columns = tab.iloc[0]
+        tab = tab[1:]
+        tab.index = [0]
+        tab.columns = [str(x) for x in tab.columns]
+        if all([any([x in col for col in tab.columns])  for x in _list]):
+            if return_tab is None:
+                return_tab = tab
+            else:
+                return_tab = return_tab.append(tab)
+    if columns != None:
+        return_tab.columns = columns
     return return_tab
 
 
 
 def get_val(all_fonts, _list, columns=None):
-    '''Renvoie un tableau selectionné par ses colonnes (à valeurs dans _list)'''
+    '''Renvoie une valeur selectionnée par ses colonnes (à valeurs dans _list)'''
     return_font = [font for font in all_fonts if _contains(font, _list)]
 #    try:
     assert len(return_font) == 2
@@ -129,6 +143,11 @@ def parse(file):
                                 ['Forme Pharmaceutique 1', 'Info compl'],
                                 ['Forme Pharmaceutique', 'Info compl']
                                 )
+                                
+    #### START : Table dates
+    table_date_commercialistation = get_tab_verticale(all_tables, ['Commercialisation'])
+    table_date_aggrement = get_tab_verticale(all_tables, ['Date d', 'ment collectiv'])
+    table_date_premiere_inscription = get_tab_verticale(all_tables, ['Date de premi', 're inscription s'])
 
     # columns = table_forme.columns
     #def _lambda_columns(x):
@@ -187,6 +206,19 @@ def parse(file):
                 break
         code_ATC = font.text.split('\n')[2:-1]
 
+    
+    ### Labo
+#    for font in all_fonts:
+#        if 'Laboratoire :' in font:
+#            break
+#    laboratoire = font.next_sibling.next_sibling.next_sibling.next_sibling.text 
+#    
+    ### Labo exploitant
+    for font in all_fonts:
+        if 'Laboratoire exploitant :' in font:
+            break
+    laboratoire_exploitant = font.next_sibling.next_sibling.next_sibling.next_sibling.text 
+
 
 
     #### START : Statut de remboursement
@@ -202,12 +234,15 @@ def parse(file):
     smr = get_tab(all_tables, ['Service m', 'dical rendu'])
 
     ligne = pd.tools.merge.concat([table_presentation, table_infos, table_voie, smr,
-                                   table_forme, table_chemical_1], axis = 1)
+                                   table_forme, table_chemical_1, table_date_commercialistation, table_date_premiere_inscription,
+                                   table_date_aggrement], axis = 1)
     ligne['statut_remboursement'] = table_rembourement
     ligne['seuils_alerte'] = table_posologie
 
     if isinstance(code_ATC, str):
         ligne['classe_atc'] = code_ATC
+        
+    ligne['laboratoire_exploitant'] = laboratoire_exploitant
 
 
 
@@ -253,6 +288,10 @@ if __name__ == '__main__':
             table = tab
         else:
             table = table.append(tab)
+    
+    
+    ### Taux de remplissage par colonne
+    print table.apply(lambda x: x.notnull().sum() / float(len(x)))
 
 
 

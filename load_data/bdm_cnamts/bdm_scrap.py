@@ -183,10 +183,9 @@ def parse(file):
     except:
         problem += [file]
         pass
-        
 
-    
-    
+
+
 if __name__ == '__main__':
     list_cip = os.listdir(os.path.join(path_BDM_scrap, 'cip'))
     list_cip 
