@@ -7,60 +7,13 @@ Created on Mon Dec 22 16:17:44 2014
 
 
 import cookielib
-from cStringIO import StringIO
-import urllib
 import urllib2
-import urlparse
-import time
-import csv
-import numpy as np
-import pandas as pd
-import json
-from lxml import etree
-import io
 import os
 
-cip = 3400936172449
+import pandas as pd
 
 from CONFIG import path_BDM_scrap
 url_opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-
-
-## plan A
-list_cip0 = []
-for list_num in range(530, 535):
-    num = str(list_num)
-    tab = pd.read_csv(os.path.join(path_BDM_scrap, 'Fic_liste_CIP' + num + '.xls'), delimiter = '\t')
-    cip_table = tab.iloc[:, 0].tolist()
-    list_cip0 += cip_table
-
-
-print len(list_cip0)
-list_cip0 = set(list_cip0)
-print len(list(list_cip0))
-
-# plan B
-from load_data.sniiram import load_sniiram
-sniiram = load_sniiram()
-list_cip1 = sniiram.index.tolist()
-
-print len(list_cip1)
-list_cip1 = set(list_cip1)
-print len(list(list_cip1))
-
-manquant_dans_bdm = list_cip1 - list_cip0
-print 'manquant ', len(manquant_dans_bdm)
-
-
-# Deja calculé :
-deja_calc = set([cip[:-5] for cip in os.listdir(path_BDM_scrap + 'cip')])
-print len(deja_calc)
-print len((list_cip1 & list_cip0) - deja_calc)
-#for k in range(20):
-#    time.sleep(120)
-#    deja_calc = set([cip[:-5] for cip in os.listdir(path_BDM_scrap + 'cip')])
-#    print len(deja_calc)
-
 
 pas_de_valeur = []
 def load_cip(cip, ext):
@@ -82,12 +35,61 @@ def load_cip(cip, ext):
         f.write(html_page)
 
 
-for cip in (list_cip1 & list_cip0) - deja_calc:
-    load_cip(cip, 'avis')
-    load_cip(cip, 'cip')
+
+if __name__ == '__main__':
+
+    ## liste chargé sur le site de BDM
+    list_cip0 = []
+    for list_num in range(530, 535):
+        num = str(list_num)
+        tab = pd.read_csv(os.path.join(path_BDM_scrap, 'Fic_liste_CIP' + num + '.xls'), delimiter = '\t')
+        cip_table = tab.iloc[:, 0].tolist()
+        list_cip0 += cip_table
+
+    print len(list_cip0)
+    list_cip0 = set(list_cip0)
+    print len(list(list_cip0))
+
+    #  liste présente dans le sniiram
+    from load_data.sniiram import load_sniiram
+    sniiram = load_sniiram()
+    list_cip1 = sniiram.index.tolist()
+
+    print len(list_cip1)
+    list_cip1 = set(list_cip1)
+    print len(list(list_cip1))
+
+    #  liste présente dans medic_gouv
+    from load_data.medic_gouv import load_medic_gouv
+    gouv = load_medic_gouv(var_to_keep = ['CIP'])
+    list_cip2 = gouv['CIP'].tolist()
+
+    print len(list_cip2)
+    list_cip2 = set(list_cip2)
+    print len(list(list_cip2))
 
 
-path = 'D:\data\Medicament\BDM\\pas_dans_gouv\\'
-for cip in list_cip0 - list_cip1:
-    load_cip(cip, 'avis')
-    load_cip(cip, 'cip')
+    manquant_dans_bdm = list_cip1 - list_cip0
+    print 'manquant ', len(manquant_dans_bdm)
+
+    manquant_de_gouv_dans_bdm = list_cip2 - list_cip0
+    print 'manquant ', len(manquant_de_gouv_dans_bdm)
+
+    # Deja calculé :
+    deja_calc = set([cip[:-5] for cip in os.listdir(path_BDM_scrap + 'cip')])
+    print len(deja_calc)
+    print len((list_cip1 & list_cip0) - deja_calc)
+    #for k in range(20):
+    #    time.sleep(120)
+    #    deja_calc = set([cip[:-5] for cip in os.listdir(path_BDM_scrap + 'cip')])
+    #    print len(deja_calc)
+
+    for cip in (list_cip1 & list_cip0) - deja_calc:
+        load_cip(cip, 'avis')
+        load_cip(cip, 'cip')
+
+
+    path = 'D:\data\Medicament\BDM\\pas_dans_gouv\\'
+    for cip in list_cip0 - list_cip1:
+        load_cip(cip, 'avis')
+        load_cip(cip, 'cip')
