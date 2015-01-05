@@ -60,7 +60,7 @@ def recode_dosage_lambda1(x):
         return str(float(x.split()[0]) * 1000) + ' mg'
     except:
         return x
-        
+
 def recode_dosage(table):
     assert 'Dosage' in table.columns
     table = table[table['Dosage'].notnull()].copy()
@@ -85,7 +85,7 @@ def recode_dosage(table):
     table['Dosage'] = table['Dosage'].str.replace('935.mg', '935 mg')
     table['Dosage'] = table['Dosage'].str.replace('25mg', '25 mg')
     table['Dosage'] = table['Dosage'].str.replace('50mg', '50 mg')
-    
+
 #    table['Dosage'] = table['Dosage'].str.replace('UI', 'U')
     return table
 
@@ -124,7 +124,7 @@ def recode_ref_dosage(table):
     table['Ref_Dosage'] = table['Ref_Dosage'].str.replace('sachet dose', 'sachet-dose')
     table['Ref_Dosage'] = table['Ref_Dosage'].apply(recode_litre_en_ml)
     return table
-    
+
 
 def recode_nom_substance_lambda(string):
     parentesis = re.findall('\(.+\)', string)
@@ -260,7 +260,7 @@ def table_update(table):
                 reference_dose = 1
             # travail de base sur le label
             label = row['Label_presta']
-            
+
             if not isinstance(label, str):
                 nb_ref_in_label[i] = np.nan
             else:
@@ -271,7 +271,7 @@ def table_update(table):
                     # TODO: douteux quand la référence apparait plusieurs fois
                     label_dose = extract_quantity(label, reference)
                     nb_ref_in_label[i] = label_dose/reference_dose
-    
+
                 if nb_ref_in_label[i] == 0:
                     for unite in ['ml', 'l', 'mg', 'g', 'dose', 'litre']:
                         if len(reference) >= len(unite) + 1:
@@ -280,7 +280,7 @@ def table_update(table):
                                reference[:len(unite)] == unite :
                                 if ' ' + unite in label:
                                     nb_ref_in_label[i] = extract_quantity(label, ' ' + unite)/reference_dose
-    
+
                 if nb_ref_in_label[i] == 0:
                     reference = row['Ref_Dosage']
                     contenant = [var for var in element_standard
@@ -290,12 +290,12 @@ def table_update(table):
                         if var in label:
                             label_dose = extract_quantity(label, var)
                             nb_ref_in_label[i] = label_dose
-    
+
                 if nb_ref_in_label[i] == 0:
                     reference = row['Ref_Dosage']
                     if reference in ['lyophilisat', '1 flacon', 'dose mesurée']:
                         nb_ref_in_label[i] = extract_quantity(label, 'flacon')
-    
+
                 if nb_ref_in_label[i] == 0:
                     reference = row['Ref_Dosage']
                     if ((any(masse in reference for masse in ['g', 'mg']) and
@@ -303,7 +303,7 @@ def table_update(table):
                         (any(masse in label for masse in ['g', 'mg']) and
                         any(vol in reference for vol in ['l', 'ml']))):
                         incoherence_identifiee += [i]
-    
+
                     elif reference == 'comprimé' and 'gélule' in label:
                         nb_ref_in_label[i] = extract_quantity(label, 'gélule')
                     elif 'qsp' in row['Dosage']:
@@ -407,19 +407,19 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
                 problemes = problemes | tab['CIS'].isin(['I6049513', 'inc     '])
                 tab = tab.loc[~problemes, :]
                 tab['CIS'].astype(int)
-                
+
             if 'CIP' in intersect:
                 tab['CIP'] = tab['CIP'].astype(str)
-            if 'Ref_Dosage' in intersect:
-                tab = recode_ref_dosage(tab)
-            if 'Dosage' in intersect:
-                tab = recode_dosage(tab)
-            if 'Label_presta' in intersect:
-                tab = recode_label_presta(tab)
-            if 'Prix' in intersect:
-                tab = recode_prix(tab)
-            if 'Nom_Substance' in intersect:
-                tab = recode_nom_substance(tab)
+#            if 'Ref_Dosage' in intersect:
+#                tab = recode_ref_dosage(tab)
+#            if 'Dosage' in intersect:
+#                tab = recode_dosage(tab)
+#            if 'Label_presta' in intersect:
+#                tab = recode_label_presta(tab)
+#            if 'Prix' in intersect:
+#                tab = recode_prix(tab)
+#            if 'Nom_Substance' in intersect:
+#                tab = recode_nom_substance(tab)
             if output is None:
                 output = tab
                 print("la première table est " + name + " , son nombre de " +
@@ -450,8 +450,8 @@ def load_medic_gouv(maj_bdm=maj_bdm, var_to_keep=None, CIP_not_null=False):
     if 'nb_ref_in_label_medic_gouv' in var_to_keep:
         output['nb_ref_in_label_medic_gouv'] = table_update(output)
 #    if 'mode_prise' in var_to_keep:
-#        output['mode_prise'] = mode_prise(output)   
-    
+#        output['mode_prise'] = mode_prise(output)
+
     return output
 
 if __name__ == '__main__':
@@ -465,20 +465,20 @@ if __name__ == '__main__':
 #                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
 
     info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
-                             'Element_Pharma', 'Code_Substance', 'Nom_Substance', 
+                             'Element_Pharma', 'Code_Substance', 'Nom_Substance',
                              'Nature_Composant', 'Substance_Fraction',
-                             'Libelle_ASMR', 'Type', 'Ref_Dosage', 'Dosage', 
+                             'Libelle_ASMR', 'Type', 'Ref_Dosage', 'Dosage',
                              'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                              'indic_droit_rembours', 'Statu_admin_presta',
                              'Label_presta','Valeur_ASMR', 'Date_ASMR',
                              'Label_presta','Valeur_SMR', 'Date_SMR',
                              'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
 #    test = table_SMR()
-    
+
     table = load_medic_gouv(maj_bdm, info_utiles_from_gouv)
     # Test statine
-    
-    
+
+
 
     table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]
 
