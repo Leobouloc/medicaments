@@ -15,7 +15,7 @@ pd.set_option('max_colwidth', 100)
 from CONFIG import path_gouv
 # Derniere mise à jour BDM
 
-maj_bdm = 'maj_20140915122241' # maj_20141128
+maj_bdm = 'maj_20141128' # 'maj_20140915122241' # maj_20141128
 
 
 dico_variables = dict(
