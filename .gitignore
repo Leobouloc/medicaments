@@ -4,3 +4,4 @@
 *.pyc
 CONFIG.py
 .spyderproject
+.project
