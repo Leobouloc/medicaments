@@ -10,6 +10,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from sklearn.ensemble import RandomForestClassifier
+
+
 def all_info(table):
     '''n affiche que les colonnes non vides que l'on connait'''
     cols_to_show = [col for col in table.columns if table[col].notnull().any()]
@@ -37,6 +40,7 @@ def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = 
 
     test = pd.merge(pd.DataFrame(serie1), pd.DataFrame(serie2), left_index = True, right_index = True, how='inner')    
     test.dropna(inplace = True)
+    print str(len(test)) + ' points'
     if isinstance(color_serie, str):
         test.columns = ['x', 'y']
         test = test.sort('x')
@@ -105,3 +109,37 @@ def panda_merge(*series):
 def dot_prod_series(a, b):
     b.index = a.index
     return a*b
+
+
+def rem_whspc(table):
+    def _rem_whspc(x):
+        if isinstance(x, str) or isinstance(x, unicode):
+            if '' == x.replace(' ', ''):
+                return np.nan
+        return x
+    return table.applymap(_rem_whspc)
+
+def completness(table):
+    '''Shows proportion of non null and whitespace strings'''
+    table = rem_whspc(table)
+    a =  table.apply(lambda x: x.notnull().sum() / float(len(x)))
+    b = table.apply(lambda x: x.nunique())
+    ret = panda_merge(a, b)
+    ret.columns = ['not_null', 'nunique']
+    print ret
+    print 'This table has : ' + str(len(table)) + ' lines'
+    
+    
+#####
+def make_forest(train, a_predire_col, pour_predire_cols):
+    '''Utilise les random forest de Sklearn pour predire la colonne a_predire de test par les features pour_predire_cols'''
+    a_predire = list(train[a_predire_col])
+    pour_predire_train = [list(x)[1:] for x in list(train[pour_predire_cols].itertuples())]
+    forest = RandomForestClassifier(n_estimators=40, criterion='entropy', max_depth=None, min_samples_split=4, min_samples_leaf=2, max_features='auto', max_leaf_nodes= None, bootstrap=True, oob_score=False, n_jobs=1, random_state=None, verbose=0, min_density=None, compute_importances=None)
+    forest.fit(pour_predire_train, a_predire)
+    return forest
+    
+def use_forest(forest, test, pour_predire_cols):
+    pour_predire_test = [list(x)[1:] for x in list(test[pour_predire_cols].itertuples())]
+    prediction = forest.predict(pour_predire_test)
+    return prediction
