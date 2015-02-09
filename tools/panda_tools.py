@@ -9,6 +9,7 @@ import numpy
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from os.path import join
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -19,6 +20,7 @@ def all_info(table):
     print (table[cols_to_show])
     
 def grp_and_count(table, group, function):
+    '''Apply function to group and view group size in same table'''
     a = table.groupby(group).apply(function)
     b = table.groupby(group).apply(len)
     c = panda_merge(a, b)
@@ -27,6 +29,7 @@ def grp_and_count(table, group, function):
     return c
 
 def bind_and_plot(serie1, serie2, color_serie = '', describe = '', return_obj = False, return_ma = False, smooth_avr = None, xlabel = '', ylabel = '', title = ''):
+    '''Scatter plot : enter series (3rd serie for color)'''    
     assert (not return_obj) or (not return_ma)   
     
     def movingaverage(interval, window_size):
@@ -112,6 +115,7 @@ def dot_prod_series(a, b):
 
 
 def rem_whspc(table):
+    '''Removes all whitespaces from a table'''
     def _rem_whspc(x):
         if isinstance(x, str) or isinstance(x, unicode):
             if '' == x.replace(' ', ''):
@@ -128,8 +132,49 @@ def completness(table):
     ret.columns = ['not_null', 'nunique']
     print ret
     print 'This table has : ' + str(len(table)) + ' lines'
+ 
+##### For pool mulitprocessing
+
+def divide_table(path, file_name, num_of_tables, sep = ';'):
+    '''Creates num_of_tables new tables from the one : Useful for multiprocessing'''
+    table = pd.read_csv(join(path, file_name), sep = ';')
+    new_table_len = len(table) // num_of_tables
+    for i in range(num_of_tables):
+        new_table = table.iloc[i*new_table_len : min((i + 1)* new_table_len, len(table))]
+        new_table_name = file_name.replace('.csv', '_' + str(i) + '.csv')
+        new_table.to_csv(join(path, new_table_name), sep = ';', index = False)
+
+def regroup_tables(path, old_file_name, new_file_name,num_of_tables, sep = ';'):
+    '''Regroups tables as created in divide_table : After multiprocessing'''
+    new_table = pd.DataFrame()
+    list_of_table_names = [old_file_name.replace('.csv', '_' + str(i) + '.csv') for i in range(num_of_tables)]
+    for tab_name in list_of_table_names:
+        tab = pd.read_csv(join(path, tab_name), sep = ';')
+        new_table = new_table.append(tab, ignore_index = True)
+    new_table.to_csv(join(path, new_file_name), sep = ';')
+    return new_table
+
+###
+
+def string_to_dataframe(tab_string, num_cols, header = True):
+    '''Transforms a string copied and pasted from libre office calc to pandas data frame'''
+#    import pdb
+#    pdb.set_trace()
+    tab_list = tab_string.split()
+    columns = range(num_cols)
+    if header:
+        columns = tab_list[:num_cols]
+        tab_list = tab_list[num_cols:]
+    dict_of_cols = dict()
     
-    
+    for i in range(num_cols):
+        dict_of_cols[columns[i]] = [tab_list[x] for x in range(len(tab_list)) if x%num_cols == i]    
+    return_table = pd.DataFrame()
+    for key, value in dict_of_cols.iteritems():
+        return_table[key] = value
+    return return_table
+
+
 #####
 def make_forest(train, a_predire_col, pour_predire_cols):
     '''Utilise les random forest de Sklearn pour predire la colonne a_predire de test par les features pour_predire_cols'''
@@ -140,6 +185,7 @@ def make_forest(train, a_predire_col, pour_predire_cols):
     return forest
     
 def use_forest(forest, test, pour_predire_cols):
+    '''Use a scikit learn forest model on a pandas table'''
     pour_predire_test = [list(x)[1:] for x in list(test[pour_predire_cols].itertuples())]
     prediction = forest.predict(pour_predire_test)
     return prediction
