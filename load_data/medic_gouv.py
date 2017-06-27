@@ -464,20 +464,22 @@ if __name__ == '__main__':
 #                                      'Element_Pharma','Code_Substance','Nom_Substance','Dosage',
 #                                      'Ref_Dosage','Nature_Composant','Substance_Fraction'])
 
-    info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
-                             'Element_Pharma', 'Code_Substance', 'Nom_Substance',
-                             'Nature_Composant', 'Substance_Fraction',
-                             'Libelle_ASMR', 'Type', 'Ref_Dosage', 'Dosage',
+    info_utiles_from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires',
+                             'Num_Europe',
+                             #'Element_Pharma', 'Code_Substance', 'Nom_Substance',
+                             #'Nature_Composant', 'Substance_Fraction',
+                             #'Libelle_ASMR', 'Type', 'Ref_Dosage', 'Dosage',
                              'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
                              'indic_droit_rembours', 'Statu_admin_presta',
                              'Label_presta','Valeur_ASMR', 'Date_ASMR',
                              'Label_presta','Valeur_SMR', 'Date_SMR',
-                             'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
+                             #'nb_ref_in_label_medic_gouv',
+                             'premiere_vente', 'derniere_vente']
 #    test = table_SMR()
 
     table = load_medic_gouv(maj_bdm, info_utiles_from_gouv)
     # Test statine
-
+    XXX
 
 
     table = table[~table['Element_Pharma'].isin(['pansement', 'gaz'])]

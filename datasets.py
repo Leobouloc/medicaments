@@ -26,7 +26,7 @@ def create_dataset_brut(from_gouv, maj_gouv, from_cnamts, force=False):
     print 'Loading medic.gouv'
     gouv = mg.load_medic_gouv(maj_gouv, var_to_keep=from_gouv, CIP_not_null=True)
     print 'Loading cnamts'
-    cnam = cnamts.bdm_cnamts(from_cnamts)
+    cnam = cnamts(from_cnamts)
     print 'Loading Sniiram extract'
     # Chargement de la base Sniiram
     sniiram = load_sniiram()
@@ -55,8 +55,8 @@ def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
     table['Dosage_num'] = table['Dosage'].str.findall('\d*\.?\d+').str.get(0)
     table['Dosage_num'] = table['Dosage_num'].astype(float)
     table['dosage_par_prestation_medic_gouv'] = table['Dosage_num']*table['nb_ref_in_label_medic_gouv']
-    table['dosage_par_prestation_medic_gouv'].replace(0, np.nan, inplace=True)   
-    
+    table['dosage_par_prestation_medic_gouv'].replace(0, np.nan, inplace=True)
+
     # Moved from exploitation_sniiram
     table['role'] = table['Type'] == 0 # True pour le princeps et False pour le générique
     def Id_Groupe_int(x):
@@ -64,7 +64,7 @@ def create_dataset_plus(from_gouv, maj_gouv, from_cnamts, force=False):
             return int(x)
         except:
             return np.nan
-            
+
     table.loc[:, 'Id_Groupe'] = table.loc[:, 'Id_Groupe'].apply(Id_Groupe_int)
     table.loc[:, 'role'] = table.loc[:, 'role'].astype(bool) #pour faire planter si on a trois groupes...
     return table
