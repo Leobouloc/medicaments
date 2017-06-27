@@ -62,7 +62,7 @@ def choix_de_la_base(table):
         taille_du_groupe = grp['ddd_par_presta_' + dosage_name].apply(lambda x: x.notnull().sum())
 
         table['prix_par_ddd_' + dosage_name] = np.nan
-        table.loc[selector, 'prix_par_ddd_' + dosage_name] = table.loc[selector, string] / table.loc[selector, 'ddd_par_presta_' + dosage_name]
+        table.loc[selector, 'prix_par_ddd_' + dosage_name] = table.loc[selector, string].astype(float) / table.loc[selector, 'ddd_par_presta_' + dosage_name].astype(float)
         prix_moyen_par_groupe[dosage_name] = grp['prix_par_ddd_' + dosage_name].sum().div(taille_du_groupe)
         #.apply(lambda x: x*x) #Il s'agit en fait du carré
 #        selector_grp = grp.apply(lambda x: any(x.notnull())) ### select groups that are not all nan

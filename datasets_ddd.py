@@ -105,8 +105,10 @@ def create_dataset_ddd(from_gouv, maj_gouv, from_cnamts, force=False):
     table = calcul_ddd_par_presta(table, ddd)
     print (' après calcul ddd :' + str(len(table)))
    
-    table = choix_de_la_base(table)
-    print (' après choix de la base :' + str(len(table)))
+   
+# TODO: ATTENTION : il faut décommenter ci dessous
+#    table = choix_de_la_base(table)
+#    print (' après choix de la base :' + str(len(table)))
 
     # => on a une seule substance par code ATC
     assert ddd.groupby(['CODE_ATC'])['CHEMICAL_SUBSTANCE'].nunique().max()
@@ -147,42 +149,42 @@ if __name__ == '__main__':
 
     ##### START : Indique le nombre de ddds récupérables au max
     ### liste des atcs présents une seule fois dans atc_ddd
-    ddd = load_atc_ddd()
+#    ddd = load_atc_ddd()
 #    base = calcul_ddd_par_presta(base, ddd)
-    atcs_uniques = ddd.groupby('CODE_ATC')['CODE_ATC'].filter(lambda x: len(x) == 1)
-    base['CODE_ATC'].fillna('', inplace = True)
-    ## indique pour chaque cip si son code atc est unique dans atc_ddd
-    a = base['CODE_ATC'].apply(lambda x: x in list(atcs_uniques))
-    atcs_bien = ddd.groupby('CODE_ATC').filter(lambda x: (len(x) == x['MODE'].nunique()) and (len(x)>1))['CODE_ATC']
-    base['CODE_ATC'].fillna('', inplace = True)
-    ## indique pour chaque cip si son code atc est utilisable dans atc_ddd
-    b = base['CODE_ATC'].apply(lambda x: x in list(atcs_bien))
-    ##recuperables
-    print 'On pourrait récupérer aux max : ' + str(a.sum() + b.sum()) + ' ddds'
-    print 'On en récupère : ' + str((base['ddd_par_presta_medic_gouv'].notnull() | base['ddd_par_presta_cnamts'].notnull()).sum())
-    ##### END : Indique le nombre de ddds récupérables au max
-
-    sel = base['ddd_par_presta_cnamts'] == 'prob_1'
-    selector = base['ddd_par_presta_cnamts'].isnull() & base['ddd_par_presta_medic_gouv'].isnull()
-    base[selector & sel][['ddd_par_presta_cnamts', 'ddd_par_presta_medic_gouv', 'UNITE_SA', 'Dosage', 'UNITE', 'CODE_ATC']].iloc[10:20]
+#    atcs_uniques = ddd.groupby('CODE_ATC')['CODE_ATC'].filter(lambda x: len(x) == 1)
+#    base['CODE_ATC'].fillna('', inplace = True)
+#    ## indique pour chaque cip si son code atc est unique dans atc_ddd
+#    a = base['CODE_ATC'].apply(lambda x: x in list(atcs_uniques))
+#    atcs_bien = ddd.groupby('CODE_ATC').filter(lambda x: (len(x) == x['MODE'].nunique()) and (len(x)>1))['CODE_ATC']
+#    base['CODE_ATC'].fillna('', inplace = True)
+#    ## indique pour chaque cip si son code atc est utilisable dans atc_ddd
+#    b = base['CODE_ATC'].apply(lambda x: x in list(atcs_bien))
+#    ##recuperables
+#    print 'On pourrait récupérer aux max : ' + str(a.sum() + b.sum()) + ' ddds'
+#    print 'On en récupère : ' + str((base['ddd_par_presta_medic_gouv'].notnull() | base['ddd_par_presta_cnamts'].notnull()).sum())
+#    ##### END : Indique le nombre de ddds récupérables au max
+#
+#    sel = base['ddd_par_presta_cnamts'] == 'prob_1'
+#    selector = base['ddd_par_presta_cnamts'].isnull() & base['ddd_par_presta_medic_gouv'].isnull()
+#    base[selector & sel][['ddd_par_presta_cnamts', 'ddd_par_presta_medic_gouv', 'UNITE_SA', 'Dosage', 'UNITE', 'CODE_ATC']].iloc[10:20]
 
 
 #nunique_code_atc == atc_ddd_restreint['MODE'].nunique()
 
 
-#    maj_gouv = 'maj_20140915122241'
-#    # parametres du calcul
-#    # Ne marche pas si la liste inclut 'CIS'
-#    from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
-#                             'Code_Substance', 'Nom_Substance', 'Libelle_ASMR', 'Type',
-#                             'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
-#                             'indic_droit_rembours', 'Statu_admin_presta',
-#                             'Ref_Dosage', 'Dosage', 'Label_presta','Valeur_ASMR',
-#                             'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
-#    from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA',
-#                               'UNITE_SA', 'NB_UNITES'] #LABO
-#    from_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
-#    
-#
-##    test = dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
-#    test2 = dataset_ddd(from_gouv, maj_gouv, from_cnamts)
+    maj_gouv = 'maj_20140915122241'
+    # parametres du calcul
+    # Ne marche pas si la liste inclut 'CIS'
+    from_gouv = ['CIP7', 'CIP', 'Nom', 'Id_Groupe', 'Prix', 'Titulaires', 'Num_Europe',
+                             'Code_Substance', 'Nom_Substance', 'Libelle_ASMR', 'Type',
+                             'Date_declar_commerc', 'Date_AMM', 'Taux_rembours',
+                             'indic_droit_rembours', 'Statu_admin_presta',
+                             'Ref_Dosage', 'Dosage', 'Label_presta','Valeur_ASMR',
+                             'nb_ref_in_label_medic_gouv', 'premiere_vente', 'derniere_vente']
+    from_cnamts = ['CIP', 'CODE_ATC', 'LABO', 'DOSAGE_SA',
+                               'UNITE_SA', 'NB_UNITES'] #LABO
+    from_ddd = ['CODE_ATC', 'CHEMICAL_SUBSTANCE', 'DDD', 'UNITE', 'MODE']
+    
+
+#    test = dataset_ddd(info_utiles_from_atc_ddd, info_utiles_from_gouv, maj_gouv, info_utiles_from_cnamts)
+    test2 = dataset_ddd(from_gouv, maj_gouv, from_cnamts)
